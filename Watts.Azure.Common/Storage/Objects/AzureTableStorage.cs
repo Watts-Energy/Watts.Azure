@@ -72,8 +72,6 @@ namespace Watts.Azure.Common.Storage.Objects
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception when creating the table {this.TableName}");
-
-                    
                     throw;
                 }
             }

@@ -3,9 +3,9 @@ namespace Watts.Azure.Common.Storage.Objects
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Interfaces.General;
     using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
+    using Watts.Azure.Common.Interfaces.General;
     using LogLevel = Watts.Azure.Common.LogLevel;
 
     /// <summary>

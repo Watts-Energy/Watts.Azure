@@ -1,7 +1,7 @@
 namespace Watts.Azure.Common.Interfaces.General
 {
     /// <summary>
-    /// Log interface resembling log4net's ILog.
+    /// Log interface resembling log4net's ILog, but containing only a few simple methods.
     /// </summary>
     public interface ILog
     {

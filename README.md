@@ -272,8 +272,9 @@ The machines offered in Azure do not come with R pre-installed so you must do on
   folder and add it through the Azure portal (Details [here](https://docs.microsoft.com/en-us/azure/batch/batch-application-packages)). 
   Remember to give it a version and make the one you want to use the *Default version*. 
   The application package will reside on the storage account linked with your batch account. 
-  **IMPORTANT** The default version, if you do nothing, is R version 3.3.2. 
-  If you've uploaded a different version in your application package, make sure you invoke *UseRVersion(string version)* (e.g. UseRVersion("3.4.1") 
+  **IMPORTANT:** You must name the application package 'R' when you create it in the Azure Portal.
+  **ALSO IMPORTANT:** The default version in **Watts.Azure**, if you do nothing, is R version 3.3.2. 
+  If you've uploaded a different version in your application package, make sure you invoke *UseRVersion(string version)* (e.g. UseRVersion("3.4.1"))
   somewhere after your invocation of *.ExecuteRScript(string scriptPath)*.
   * **LINUX** You don't need to do anything really. **Watts.Azure** will run *apt-get install -y r-base* on the node before 
   executing your script. You can, however, not currently select the version of R you want to run when running in Linux.

@@ -3,18 +3,17 @@
     using Common.Batch.Objects;
     using Common.Interfaces.General;
     using Microsoft.Azure.Batch.Auth;
-    using Watts.Azure.Utils.Helpers.Batch;
 
     public interface IBatchCreationWithPoolSetup
     {
         BatchSharedKeyCredentials Credentials { get; set; }
 
-        BatchCreationWithPoolSetup ConfigureMachines(AzureMachineConfig machineConfig);
+        IBatchCreationWithPoolSetup ConfigureMachines(AzureMachineConfig machineConfig);
 
-        BatchCreationWithPoolSetup WithDefaultMachineConfig();
+        IBatchCreationWithPoolSetup WithDefaultMachineConfig();
 
-        BatchCreationWithPoolSetup WithOneSmallMachine();
+        IBatchCreationWithPoolSetup WithOneSmallMachine();
 
-        BatchCreationWithInputPreparation PrepareInputUsing(IPrepareInputFiles inputPreparer);
+        IBatchCreationWithInputPreparation PrepareInputUsing(IPrepareInputFiles inputPreparer);
     }
 }

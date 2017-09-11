@@ -310,9 +310,9 @@ In addition to the above there's a single test of using Azure File Share to uplo
 - FileshareConnectionString
 
 # Azure Data Factory
-We support Copy Table -> Table currently through the fluent interface, e.g.
+We support Copy Table -> Table currently through the fluent interface.
 
-Similarly to working with batch, you will need an environment that implement *IPredefinedDataCopyEnvironment*. 
+Similarly to working with batch, you will need an environment that implements *IPredefinedDataCopyEnvironment*. 
 Implementing this environment requires you to find the following information:
 1. Your subscription id (find it through the [Azure portal](https://portal.azure.com)).
 2. Application client id (explained below)

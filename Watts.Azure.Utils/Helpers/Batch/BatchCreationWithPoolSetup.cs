@@ -28,25 +28,25 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
         protected BatchPoolSetup PoolSetup { get; set; }
 
-        public BatchCreationWithPoolSetup ConfigureMachines(AzureMachineConfig machineConfig)
+        public IBatchCreationWithPoolSetup ConfigureMachines(AzureMachineConfig machineConfig)
         {
             this.MachineConfig = machineConfig;
             return this;
         }
 
-        public BatchCreationWithPoolSetup WithDefaultMachineConfig()
+        public IBatchCreationWithPoolSetup WithDefaultMachineConfig()
         {
             this.MachineConfig = AzureMachineConfig.Small().Instances(2);
             return this;
         }
 
-        public BatchCreationWithPoolSetup WithOneSmallMachine()
+        public IBatchCreationWithPoolSetup WithOneSmallMachine()
         {
             this.MachineConfig = AzureMachineConfig.Small().Instances(1);
             return this;
         }
 
-        public BatchCreationWithInputPreparation PrepareInputUsing(IPrepareInputFiles inputPreparer)
+        public IBatchCreationWithInputPreparation PrepareInputUsing(IPrepareInputFiles inputPreparer)
         {
             return new BatchCreationWithInputPreparation(this, inputPreparer);
         }

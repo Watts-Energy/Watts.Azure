@@ -1,27 +1,27 @@
 # Introduction
 
-**Watts.Azure** provides utilities to e.g. run parallel computations implemented in e.g. *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
-having to know all the details and coding everything yourself as well as utilities to make working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
+**Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
+having to know all the details and coding everything yourself. In addition, it contains utilities to make working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
 [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/) easier.
 
-**Watts.Azure** provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
+Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
 code things from scratch and using the Azure Batch .NET API. It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
 
 It also makes it easy to set up backup in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
 
-**Watts.Azure** has a lot of utilities, but is not everything we want it to be. Yet!
+Watts.Azure has a lot of utilities, but is not everything we want it to be. Yet!
 Be sure to check out the Issues section and feel free to add feature suggestions.
 
-The reason that **Watts.Azure** exists is, that we found that working with Azure Batch from .NET (especially to execute R code) seemed needlessly cumbersome and required you to write a lot of boilerplate code.
+The reason that Watts.Azure exists is, that we found that working with Azure Batch from .NET (especially to execute R code) seemed needlessly cumbersome and required you to write a lot of boilerplate code.
 We wanted create a simple interface to Azure Batch for those of us who do not need to know the details but would like to take advantage of the massive potential for scaling compute that it offers.
 
 It also contains utilities that make working with services like Azure Table Storage, Azure Blob Storage and Azure Data Factory easier from .NET.
 
 **NOTE**: The current compute nodes in Azure support .NET framework up to 4.5.2. There's currently no way to install higher versions without
-requiring a restart of the node. If you're having trouble with executing your .NET executable in Batch, make sure you're targeting a version
+requiring a restart of the virtual machines in the Batch pool. If you're having trouble with executing your .NET executable in Batch, make sure you're targeting a version
 <= 4.5.2 of the .NET framework.
 
-Read on for some examples of how to use **Watts.Azure**.
+Read on for some examples of how to use Watts.Azure.
 
 # Azure Batch
 Some key concepts in Azure Batch:
@@ -44,7 +44,17 @@ The input file is copied to the node and a command is run on the node, which exe
 When it is done processing the task, it grabs a new one that hasn't been taken yet. 
 This continues until all tasks have been processed.
 
-Let's see **Watts.Azure** in action!
+**What does Watts.Azure solve in relation to using Azure Batch?** 
+It provides a layer of abstraction that let's you focus on the 
+basic things needed to execute something in Azure Batch, which are:
+- Prepare input files that contain the data for each task to execute in Batch,
+- Locate all files that are necessary for executing the executable or script and
+- Construct the command that each node should run on its input file.
+
+And that's it. Everything else, meaning all communication with the Azure Batch account, upload of executables and input files, monitoring of the job and
+cleaning up afterwards, is handled by Watts.Azure.
+
+Let's see Watts.Azure in action!
 The following will execute an R-script named *myScript.R* on a single Windows Server R2 box in Azure Batch. In real life scenarios, you'd obviously want to perform this on possibly hundreds of nodes simultaneously.
 
 **IMPORTANT NOTE:** If you want to run R in Azure Batch on VMs running Windows, a tiny amount of legwork is neccesary: See the section [**NOTE ON RUNNING R IN AZURE BATCH**](#note-on-running-r-in-azure-batch):
@@ -105,17 +115,17 @@ Where <additional argument 1> and <additional argument 2> are added using the
 
 When done, we invoke *StartBatch()* and wait for the batch to finish.
 
-**Watts.Azure** will monitor the job and print some information during the execution. Right now it only reports the current status 
+Watts.Azure will monitor the job and print some information during the execution. Right now it only reports the current status 
 (how many nodes are active, running or finished) 
 in a flat list format. More are implemented, but not available through the Fluent API (feel free to create a pull request :-)).
 
-*If the job already exists* (e.g. because the application that started the job crashed) **Watts.Azure** will realize this and will simply start monitoring it.
+*If the job already exists* (e.g. because the application that started the job crashed) Watts.Azure will realize this and will simply start monitoring it.
 
-You can control a lot of different settings through the Fluent API. This will be documented elsewhere.
+You can control a lot of different settings through the Fluent API. This is documented in the Wiki.
 
 # Some more examples
 
-Here are a few examples, just to show you how **Watts.Azure** is used:
+Here are a few examples, just to show you how Watts.Azure is used:
 
 ## Example 1 (R code in Windows Server 2012 R2)
 The following runs some R code on a single node running Windows Server 2012 R2.
@@ -175,7 +185,7 @@ your own *IDependencyResolver*.
 The above code uses a delegate version of *IPrepareInputFiles*, and simply passes a delegate that prepares the files 
 (PrepareInputFiles.UsingFunction(() => { ... }).
 
-The example also specifically states that statistics for the execution should not be saved. If you instead invoke *SaveStatistics()* **Watts.Azure** will 
+The example also specifically states that statistics for the execution should not be saved. If you instead invoke *SaveStatistics()* Watts.Azure will 
 create a table storage in the Batch Storage Account (if it doesn't already exist) and insert an entity containing information about the execution 
 (how long did it take, pool id, job id, number of nodes, number of tasks, etc.).
 
@@ -186,7 +196,7 @@ written to a file named main.R (with a guid appended after main), which is then 
 ## Example 2 (Combining multiple executables).
 At some point, you may want to execute multiple scripts or executables, one after the other. For instance, one R script might do some machine learning stuff, save some output, and then a C# program takes the output and stores it somewhere.
 
-**Watts.Azure** allows you to do that, by creating a *HybridBatch*. An example:
+Watts.Azure allows you to do that, by creating a *HybridBatch*. An example:
 
 ```cs
 // Define an output blob to put the batch output in, so that we can download it after the execution
@@ -259,10 +269,10 @@ var hybridBatchOutput = hybridExecution.GetExecutionOutput();
 ```
 
 ## The pool and cleanup.
-Unless specifically stated, **Watts.Azure** will clean up after the execution, by deleting the blob containers named *application(generated guid appended)* 
+Unless specifically stated, Watts.Azure will clean up after the execution, by deleting the blob containers named *application(generated guid appended)* 
 and *input(generated guid appended)* it creates to upload files to batch. It will also delete the job and the pool.
 
-If you want **Watts.Azure** to **NOT** clean up, invoke ```DoNotCleanUpAfter()``` right before you invoke e.g. *ExecuteRScript*, *ExecuteRCode* or *RunExecutable*.
+If you want Watts.Azure to **NOT** clean up, invoke ```DoNotCleanUpAfter()``` right before you invoke e.g. *ExecuteRScript*, *ExecuteRCode* or *RunExecutable*.
 
 # **NOTE ON RUNNING R IN AZURE BATCH:**
 The machines offered in Azure do not come with R pre-installed so you must do one of two things, depending on the O/S you're using.
@@ -273,10 +283,10 @@ The machines offered in Azure do not come with R pre-installed so you must do on
   Remember to give it a version and make the one you want to use the *Default version*. 
   The application package will reside on the storage account linked with your batch account. 
   **IMPORTANT:** You must name the application package 'R' when you create it in the Azure Portal.
-  **ALSO IMPORTANT:** The default version in **Watts.Azure**, if you do nothing, is R version 3.3.2. 
+  **ALSO IMPORTANT:** The default version in Watts.Azure, if you do nothing, is R version 3.3.2. 
   If you've uploaded a different version in your application package, make sure you invoke *UseRVersion(string version)* (e.g. UseRVersion("3.4.1"))
   somewhere after your invocation of *.ExecuteRScript(string scriptPath)*.
-  * **LINUX** You don't need to do anything really. **Watts.Azure** will run *apt-get install -y r-base* on the node before 
+  * **LINUX** You don't need to do anything really. Watts.Azure will run *apt-get install -y r-base* on the node before 
   executing your script. You can, however, not currently select the version of R you want to run when running in Linux.
 
 ## Test project

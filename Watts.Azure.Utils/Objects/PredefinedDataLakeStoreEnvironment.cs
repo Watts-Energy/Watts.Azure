@@ -1,23 +1,18 @@
 ﻿namespace Watts.Azure.Utils.Objects
 {
-    using Watts.Azure.Common.DataFactory.General;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Utils.Interfaces.DataFactory;
-
-    public class PredefinedDataCopyEnvironment : IPredefinedDataCopyEnvironment
+    public class PredefinedDataLakeStoreEnvironment
     {
-        public PredefinedDataCopyEnvironment()
+        public PredefinedDataLakeStoreEnvironment()
         {
         }
 
-        public PredefinedDataCopyEnvironment(string subscriptionId, string adfClientId, string clientSecret, string tenantId, StorageAccountSettings storageAccountSettings, AzureDataFactorySetup dataFactorySetup)
+        public PredefinedDataLakeStoreEnvironment(string subscriptionId, string adfClientId, string clientSecret, string tenantId, string dataLakeStoreName)
         {
             this.SubscriptionId = subscriptionId;
             this.AdfClientId = adfClientId;
             this.ClientSecret = clientSecret;
             this.ActiveDirectoryTenantId = tenantId;
-            this.StorageAccountSettings = storageAccountSettings;
-            this.DataFactorySetup = dataFactorySetup;
+            this.DataLakeStoreName = dataLakeStoreName;
         }
 
         /// <summary>
@@ -40,17 +35,9 @@
         /// </summary>
         public string ActiveDirectoryTenantId { get; set; }
 
-
         /// <summary>
-        /// Name and key of the storage account to perform the tests in.
+        /// The name of the data lake store
         /// </summary>
-        public StorageAccountSettings StorageAccountSettings { get; set; }
-
-        public AzureDataFactorySetup DataFactorySetup { get; set; }
-
-        public string GetDataFactoryStorageAccountConnectionString()
-        {
-            return $"DefaultEndpointsProtocol=https;AccountName={this.StorageAccountSettings.StorageAccountName};AccountKey={this.StorageAccountSettings.StorageAccountKey}";
-        }
+        public string DataLakeStoreName { get; set; }
     }
 }

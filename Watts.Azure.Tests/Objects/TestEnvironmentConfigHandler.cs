@@ -49,6 +49,15 @@
                     StorageAccountName = "storage account name",
                     StorageAccountKey = "storage account key"
                 }
+            },
+
+            DataLakeEnvironment = new PredefinedDataLakeStoreEnvironment()
+            {
+                SubscriptionId = "Subscription id",
+                ActiveDirectoryTenantId = "Ad tenant id",
+                AdfClientId = "Application client id",
+                ClientSecret = "Application client secret",
+                DataLakeStoreName = "Data lake store name"
             }
         };
 

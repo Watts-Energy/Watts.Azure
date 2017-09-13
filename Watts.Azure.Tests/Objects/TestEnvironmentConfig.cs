@@ -11,6 +11,8 @@
 
         public PredefinedDataCopyEnvironment DataCopyEnvironment { get; set; }
 
+        public PredefinedDataLakeStoreEnvironment DataLakeEnvironment { get; set; }
+
         public string FileshareConnnectionString { get; set; }
 
         [JsonIgnore]

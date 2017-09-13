@@ -2,21 +2,22 @@ namespace Watts.Azure.Common.Storage.Objects
 {
     using System.Collections.Generic;
     using System.Linq;
+    using Microsoft.Azure.Management.DataFactories.Common.Models;
     using Microsoft.WindowsAzure.Storage.Table;
 
     /// <summary>
     /// Represents the structure of a table in Azure Table Storage.
     /// </summary>
-    public class TableStructure
+    public class DataStructure
     {
-        public TableStructure()
+        public DataStructure()
         {
-            this.Columns = new List<TableColumn>();
+            this.DataElements = new List<DataElement>();
         }
 
-        public static TableStructure Empty => new TableStructure();
+        public static DataStructure Empty => new DataStructure();
 
-        public List<TableColumn> Columns { get; set; }
+        public List<DataElement> DataElements { get; set; }
 
         /// <summary>
         /// Add a column to the table structure. If it already exists of the type of the column is "null", nothing happens.
@@ -25,15 +26,15 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <param name="property"></param>
         public void AddColumn(string name, EntityProperty property)
         {
-            if (this.Columns.SingleOrDefault(p => p.Name.Equals(name) && !p.Type.Equals("null")) == null)
+            if (this.DataElements.SingleOrDefault(p => p.Name.Equals(name) && !p.Type.Equals("null")) == null)
             {
-                TableColumn column = new TableColumn()
+                DataElement dataElement = new DataElement()
                 {
                     Type = property.PropertyType.ToString(),
                     Name = name
                 };
 
-                this.Columns.Add(column);
+                this.DataElements.Add(dataElement);
             }
         }
 
@@ -44,15 +45,15 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <param name="type"></param>
         public void AddColumn(string name, string type)
         {
-            if (this.Columns.SingleOrDefault(p => p.Name.Equals(name) && !p.Type.Equals("null")) == null)
+            if (this.DataElements.SingleOrDefault(p => p.Name.Equals(name) && !p.Type.Equals("null")) == null)
             {
-                TableColumn column = new TableColumn()
+                DataElement column = new DataElement()
                 {
                     Type = type,
                     Name = name
                 };
 
-                this.Columns.Add(column);
+                this.DataElements.Add(column);
             }
         }
 
@@ -90,7 +91,7 @@ namespace Watts.Azure.Common.Storage.Objects
         /// </summary>
         public void ReplaceNullTypesWithString()
         {
-            foreach (var column in this.Columns)
+            foreach (var column in this.DataElements)
             {
                 if (column.Type.Equals("null"))
                 {

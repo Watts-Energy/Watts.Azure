@@ -4,6 +4,8 @@ namespace Watts.Azure.Common.Security
     using Interfaces.Security;
     using Microsoft.Azure;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using Microsoft.Rest;
+    using Microsoft.Rest.Azure.Authentication;
 
     public class AzureActiveDirectoryAuthentication : IAzureActiveDirectoryAuthentication
     {
@@ -32,6 +34,19 @@ namespace Watts.Azure.Common.Security
             }
 
             return result.AccessToken;
+        }
+
+        public ServiceClientCredentials GetServiceCredentials()
+        {
+            string tenantId = this.credentials.TenantId;
+
+            string managementEndpoint = Constants.WindowsManagementUri;
+
+            var authenticationContext = new AuthenticationContext($"{Constants.ActiveDirectoryEndpoint}/{tenantId}");
+            ClientCredential credential = new ClientCredential(this.credentials.ClientId, this.credentials.ClientSecret);
+            var creds = ApplicationTokenProvider.LoginSilentAsync(this.credentials.TenantId, credential);
+
+            return creds.Result;
         }
 
         public TokenCloudCredentials GetTokenCredentials()

@@ -10,7 +10,7 @@ namespace Watts.Azure.Common.Storage.Objects
         public BatchRunStatisticsTableStorage(CloudStorageAccount storageAccount, string tableName = "BatchStatistics")
             : base(storageAccount, tableName)
         {
-            this.TableName = tableName;
+            this.Name = tableName;
         }
 
         public void SaveStatistic(BatchStatisticsEntity statistic)

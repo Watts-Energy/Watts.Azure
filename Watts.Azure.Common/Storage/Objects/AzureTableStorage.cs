@@ -22,14 +22,14 @@ namespace Watts.Azure.Common.Storage.Objects
         public AzureTableStorage(CloudStorageAccount storageAccount, string tableName, string connectionString = "")
         {
             this.StorageAccount = storageAccount;
-            this.TableName = tableName;
+            this.Name = tableName;
             this.ConnectionString = connectionString;
             this.TableClient = this.StorageAccount.CreateCloudTableClient();
         }
 
         public string ConnectionString { get; }
 
-        public string TableName { get; set; }
+        public string Name { get; set; }
 
         protected CloudStorageAccount StorageAccount { get; set; }
 
@@ -44,7 +44,7 @@ namespace Watts.Azure.Common.Storage.Objects
 
         public CloudTable GetTableReference()
         {
-            return this.TableClient.GetTableReference(this.TableName);
+            return this.TableClient.GetTableReference(this.Name);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Watts.Azure.Common.Storage.Objects
         public CloudTable CreateTableIfNotExists()
         {
             // Retrieve a reference to the table.
-            CloudTable table = this.TableClient.GetTableReference(this.TableName);
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
 
             if (!table.Exists())
             {
@@ -66,12 +66,12 @@ namespace Watts.Azure.Common.Storage.Objects
 
                     if (!result)
                     {
-                        throw new CouldNotCreateTableException(this.TableName);
+                        throw new CouldNotCreateTableException(this.Name);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Exception when creating the table {this.TableName}");
+                    Console.WriteLine($"Exception when creating the table {this.Name}");
                     throw;
                 }
             }
@@ -86,7 +86,7 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <returns></returns>
         public CloudTable CreateTableFromTemplateEntity(DynamicTableEntity templateEntity)
         {
-            CloudTable table = this.TableClient.GetTableReference(this.TableName);
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
 
             this.Insert(templateEntity);
             this.Delete(templateEntity);
@@ -100,7 +100,7 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <returns></returns>
         public bool DeleteIfExists()
         {
-            CloudTable table = this.TableClient.GetTableReference(this.TableName);
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
 
             var result = table.DeleteIfExists();
 
@@ -184,9 +184,9 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <param name="partitionKeyType"></param>
         /// <param name="rowKeyType"></param>
         /// <returns></returns>
-        public TableStructure GetTableStructure(string partitionKeyType = null, string rowKeyType = null)
+        public DataStructure GetStructure(string partitionKeyType = null, string rowKeyType = null)
         {
-            var retVal = new TableStructure();
+            var retVal = new DataStructure();
 
             retVal.AddDefaultKeyStructure(partitionKeyType, rowKeyType);
 
@@ -197,7 +197,7 @@ namespace Watts.Azure.Common.Storage.Objects
 
             if (entities.Count == 0)
             {
-                return TableStructure.Empty;
+                return DataStructure.Empty;
             }
 
             foreach (var entity in entities)
@@ -243,7 +243,7 @@ namespace Watts.Azure.Common.Storage.Objects
             // or if it is set to return-content, then a successful operation returns status code 201 (Created)."
             if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.Created && result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
             {
-                throw new CouldNotInsertEntityException(entity.GetType().Name, this.TableName);
+                throw new CouldNotInsertEntityException(entity.GetType().Name, this.Name);
             }
         }
 
@@ -292,7 +292,7 @@ namespace Watts.Azure.Common.Storage.Objects
             //  "A successful operation returns status code 204 (No Content)."
             if (result.HttpStatusCode != (int)HttpStatusCode.NoContent)
             {
-                throw new CouldNotUpsertEntityException(entity.GetType().Name, this.TableName);
+                throw new CouldNotUpsertEntityException(entity.GetType().Name, this.Name);
             }
         }
 
@@ -314,7 +314,7 @@ namespace Watts.Azure.Common.Storage.Objects
             //  "A successful operation returns status code 204 (No Content)."
             if (result.HttpStatusCode != (int)HttpStatusCode.NoContent)
             {
-                throw new CouldNotUpsertEntityException(entity.GetType().Name, this.TableName);
+                throw new CouldNotUpsertEntityException(entity.GetType().Name, this.Name);
             }
         }
 

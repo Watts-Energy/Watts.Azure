@@ -1,7 +1,6 @@
 namespace Watts.Azure.Common.Interfaces.Storage
 {
     using System.Collections.Generic;
-    using Common.Storage.Objects;
     using DataFactory;
     using Microsoft.WindowsAzure.Storage.Table;
 
@@ -10,9 +9,7 @@ namespace Watts.Azure.Common.Interfaces.Storage
     /// </summary>
     public interface IAzureTableStorage : IAzureLinkedService
     {
-        string TableName { get; }
-
-        TableStructure GetTableStructure(string partitionKeyType = null, string rowKeyType = null);
+        //string TableName { get; }
 
         CloudTable GetTableReference();
 

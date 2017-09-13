@@ -32,7 +32,7 @@ namespace Watts.Azure.Tests
         /// Tests that it is possible to store a blob (a text file) to the storage account being tested.
         /// </summary>
         [TestMethod]
-        [TestCategory("IntegrationTest")]
+        [TestCategory("IntegrationTest"), TestCategory("Azure Blob Storage")]
         public void StoreBlob_Works()
         {
             // ARRANGE
@@ -61,7 +61,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to upload a file to a file share in Azure.
         /// </summary>
-        [TestCategory("IntegrationTest")]
+        [TestCategory("IntegrationTest"), TestCategory("Azure File Storage")]
         [TestMethod]
         public void TestUploadFile()
         {

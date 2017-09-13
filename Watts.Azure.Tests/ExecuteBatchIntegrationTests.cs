@@ -35,7 +35,7 @@ namespace Watts.Azure.Tests
         /// Tests that it is possible to find a ubuntu image in the batch marketplace.
         /// </summary>
         [TestMethod]
-        [TestCategory("IntegrationTest")]
+        [TestCategory("IntegrationTest"), TestCategory("Linux")]
         public void GetUbuntuBox_FindsImage()
         {
             // ARRANGE
@@ -54,7 +54,7 @@ namespace Watts.Azure.Tests
         /// Tests that it is possible to find a debian image in the batch marketplace.
         /// </summary>
         [TestMethod]
-        [TestCategory("IntegrationTest")]
+        [TestCategory("IntegrationTest"), TestCategory("Linux")]
         public void GetDebian8Box_FindsImage()
         {
             // ARRANGE

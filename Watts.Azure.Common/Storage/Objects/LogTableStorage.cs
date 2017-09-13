@@ -18,12 +18,12 @@ namespace Watts.Azure.Common.Storage.Objects
 
         public LogTableStorage(CloudStorageAccount account, string applicationName, string tableName = "Log") : base(account, tableName)
         {
-            this.TableName = tableName;
+            this.Name = tableName;
             this.applicationName = applicationName;
             this.instanceId = Guid.NewGuid().ToString();
         }
 
-        public string DisplayName => $"{this.TableName} {this.StorageAccount.TableEndpoint.AbsoluteUri}";
+        public string DisplayName => $"{this.Name} {this.StorageAccount.TableEndpoint.AbsoluteUri}";
 
         public void Debug(string statement)
         {
@@ -47,7 +47,7 @@ namespace Watts.Azure.Common.Storage.Objects
 
         public List<LogStatementEntity> GetLastDays(int count)
         {
-            CloudTable table = this.TableClient.GetTableReference(this.TableName);
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
 
             DateTimeOffset startTime = DateTimeOffset.Now.Date.AddDays(-count);
 

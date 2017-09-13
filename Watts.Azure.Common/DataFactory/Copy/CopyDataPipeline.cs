@@ -6,6 +6,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
     using General;
     using Interfaces.Security;
     using Interfaces.Storage;
+    using Watts.Azure.Common.Interfaces.DataFactory;
 
     /// <summary>
     /// A copy data pipeline that copies data from a source table to a target table.
@@ -20,8 +21,9 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// </summary>
         private readonly Action<string> progressDelegate;
 
-        private IAzureTableStorage sourceTable;
-        private IAzureTableStorage targetTable;
+        private IAzureLinkedService sourceService;
+        private IAzureLinkedService targetService;
+
 
         /// <summary>
         /// Instantiate a copy data pipeline to replicate data from one table to another table.
@@ -42,15 +44,15 @@ namespace Watts.Azure.Common.DataFactory.Copy
             return new CopyDataPipeline(setup, copySetup, authentication, progressDelegate);
         }
 
-        public CopyDataPipeline FromTable(IAzureTableStorage source)
+        public CopyDataPipeline FromTable(IAzureLinkedService source)
         {
-            this.sourceTable = source;
+            this.sourceService = source;
             return this;
         }
 
-        public CopyDataPipeline To(IAzureTableStorage target)
+        public CopyDataPipeline To(IAzureLinkedService target)
         {
-            this.targetTable = target;
+            this.targetService = target;
             return this;
         }
 
@@ -71,17 +73,18 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
             if (this.setup.CreateTargetTableIfNotExists)
             {
-                this.CreateTargetTableIfNotExists();
+                LinkedServiceHelper helper = new LinkedServiceHelper(this.Report);
+                helper.CreateTargetIfItDoesntExist(this.sourceService, this.targetService);
             }
 
-            var tableStructure = this.sourceTable.GetTableStructure();
+            var tableStructure = this.sourceService.GetStructure();
 
             this.dataFactory.CreateDataFactory();
 
-            this.dataFactory.LinkService(this.sourceTable.ConnectionString, this.setup.SourceLinkedServiceName);
-            this.dataFactory.LinkService(this.targetTable.ConnectionString, this.setup.TargetLinkedServiceName);
+            this.dataFactory.LinkService(this.sourceService.ConnectionString, this.setup.SourceLinkedServiceName);
+            this.dataFactory.LinkService(this.targetService.ConnectionString, this.setup.TargetLinkedServiceName);
 
-            this.dataFactory.CreateDatasets(this.sourceTable.TableName, this.targetTable.TableName, tableStructure);
+            this.dataFactory.CreateDatasets(this.sourceService.Name, this.targetService.Name, tableStructure);
 
             DateTime pipelineActivePeriodStartTime = DateTime.Now.ToUniversalTime().AddHours(-100);
             DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(200);
@@ -107,23 +110,6 @@ namespace Watts.Azure.Common.DataFactory.Copy
         public void CleanUp()
         {
             this.dataFactory.Delete();
-        }
-
-        internal void CreateTargetTableIfNotExists()
-        {
-            var tableReference = this.targetTable.GetTableReference();
-
-            if (!tableReference.Exists())
-            {
-                this.Report($"Target table did not already exist. Creating table {this.targetTable.TableName}");
-                var exampleEntities = this.sourceTable.GetTop(10);
-
-                var templateEntity =
-                    exampleEntities.FirstOrDefault(
-                        e => e.Properties.Count() == exampleEntities.Max(p => p.Properties.Count()));
-
-                this.targetTable.CreateTableFromTemplateEntity(templateEntity);
-            }
         }
 
         internal void Report(string progress)

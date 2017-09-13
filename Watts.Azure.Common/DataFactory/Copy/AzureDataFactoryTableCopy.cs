@@ -93,13 +93,9 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// <param name="targetTableName"></param>
         /// <param name="tableStructure"></param>
         /// <returns></returns>
-        public bool CreateDatasets(string sourceTableName, string targetTableName, TableStructure tableStructure)
+        public bool CreateDatasets(string sourceTableName, string targetTableName, DataStructure tableStructure)
         {
-            var structure = tableStructure.Columns.Select(p => new DataElement()
-            {
-                Type = p.Type,
-                Name = p.Name
-            }).ToList();
+            var structure = tableStructure.DataElements;
 
             this.Report($"Creating source dataset with structure {string.Join(", ", structure.Select(p => p.Name))}");
             var sourceResult = this.Client.Datasets.CreateOrUpdate(

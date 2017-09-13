@@ -11,8 +11,9 @@
     using Microsoft.Azure.Management.DataLake.Store.Models;
     using Watts.Azure.Common.Interfaces.DataFactory;
     using Watts.Azure.Common.Interfaces.Security;
+    using Watts.Azure.Common.Interfaces.Storage;
 
-    public class AzureDataLakeStore : IAzureLinkedService
+    public class AzureDataLakeStore : IAzureDataLakeStore
     {
         private IAzureActiveDirectoryAuthentication authenticator;
         private DataLakeStoreAccountManagementClient client;
@@ -33,6 +34,14 @@
                 SubscriptionId = subscriptionId
             };
             this.fileSystemClient = new DataLakeStoreFileSystemManagementClient(serviceCredentials);
+        }
+
+        public IAzureActiveDirectoryAuthentication Authenticator
+        {
+            get
+            {
+                return this.authenticator;
+            }
         }
 
         public string Name { get; set; }
@@ -131,9 +140,9 @@
             }
         }
 
-        public void DownloadFile(string srcFilePath, string destFilePath)
+        public void DownloadFile(string srcFilePath, string destFilePath, bool overwrite = false)
         {
-            this.fileSystemClient.FileSystem.DownloadFile(this.Name, srcFilePath, destFilePath);
+            this.fileSystemClient.FileSystem.DownloadFile(this.Name, srcFilePath, destFilePath, overwrite: overwrite);
         }
     }
 }

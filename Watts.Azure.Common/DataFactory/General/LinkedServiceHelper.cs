@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using Microsoft.Azure.Management.DataFactories.Models;
     using Watts.Azure.Common.Interfaces.DataFactory;
     using Watts.Azure.Common.Interfaces.Storage;
 
@@ -19,6 +20,12 @@
             if(sourceService is IAzureTableStorage && targetService is IAzureTableStorage)
             {
                 this.CreateTargetIfItDoesntExist(sourceService as IAzureTableStorage, targetService as IAzureTableStorage);
+                return;
+            }
+            else if(sourceService is IAzureTableStorage && targetService is IAzureDataLakeStore)
+            {
+                IAzureDataLakeStore dataLake = targetService as IAzureDataLakeStore;
+                dataLake.CreateDirectory(string.Empty);
                 return;
             }
 
@@ -40,6 +47,31 @@
 
                 targetTable.CreateTableFromTemplateEntity(templateEntity);
             }
+        }
+
+        public LinkedServiceTypeProperties GetLinkedServiceTypeProperties(IAzureLinkedService linkedService)
+        {
+            if(linkedService is IAzureTableStorage)
+            {
+                return new AzureStorageLinkedService(linkedService.ConnectionString);
+            }
+            else if(linkedService is IAzureDataLakeStore)
+            {
+                IAzureDataLakeStore dataLake = linkedService as IAzureDataLakeStore;
+
+                return new AzureDataLakeStoreLinkedService()
+                {
+                    AccountName = dataLake.Name,
+                    DataLakeStoreUri = dataLake.ConnectionString,
+                    SubscriptionId = dataLake.Authenticator.SubscriptionId,
+                    ServicePrincipalId = dataLake.Authenticator.Credentials.ClientId,
+                    ServicePrincipalKey = dataLake.Authenticator.Credentials.ClientSecret,
+                    Tenant = dataLake.Authenticator.Credentials.TenantId,
+                    ResourceGroupName = dataLake.Authenticator.ResourceGroupName
+                };
+            }
+
+            throw new NotImplementedException($"GetLinkedServiceTypeProperties does not have an implementation for type {linkedService.GetType().Name}");
         }
     }
 }

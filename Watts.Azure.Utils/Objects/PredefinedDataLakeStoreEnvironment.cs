@@ -6,9 +6,10 @@
         {
         }
 
-        public PredefinedDataLakeStoreEnvironment(string subscriptionId, string adfClientId, string clientSecret, string tenantId, string dataLakeStoreName)
+        public PredefinedDataLakeStoreEnvironment(string subscriptionId, string resourceGroupName, string adfClientId, string clientSecret, string tenantId, string dataLakeStoreName)
         {
             this.SubscriptionId = subscriptionId;
+            this.ResourceGroupName = resourceGroupName;
             this.AdfClientId = adfClientId;
             this.ClientSecret = clientSecret;
             this.ActiveDirectoryTenantId = tenantId;
@@ -19,6 +20,8 @@
         /// The id of your Azure subscription.
         /// </summary>
         public string SubscriptionId { get; set; }
+
+        public string ResourceGroupName { get; set; }
 
         /// <summary>
         /// The client id of the app you register with Azure AD (which you must in order to run Azure Data Factory). How to, see e.g. (see e.g. https://www.netiq.com/communities/cool-solutions/creating-application-client-id-client-secret-microsoft-azure-new-portal/)

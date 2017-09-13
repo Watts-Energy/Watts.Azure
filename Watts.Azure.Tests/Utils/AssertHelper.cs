@@ -20,7 +20,7 @@
             catch (Exception ex)
             {
 
-                if (ex.GetType() == typeof(ExceptionType) || ex.InnerException.GetType() == typeof(ExceptionType))
+                if (ex is ExceptionType || ex.InnerException is ExceptionType)
                 {
                     exceptionThrown = true;
                 }
@@ -45,9 +45,12 @@
             {
                 func.Invoke();
             }
-            catch (ExceptionType)
+            catch (Exception ex)
             {
-                exceptionThrown = true;
+                if (ex is ExceptionType || ex.InnerException is ExceptionType)
+                {
+                    exceptionThrown = true;
+                }
             }
 
             if (exceptionThrown)

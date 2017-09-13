@@ -27,6 +27,7 @@
 
             this.dataLakeAuthentication = new AzureActiveDirectoryAuthentication(
                 this.dataLakeEnvironment.SubscriptionId,
+                this.dataLakeEnvironment.ResourceGroupName,
                 new AppActiveDirectoryAuthenticationCredentials()
                 {
                     ClientId = this.dataLakeEnvironment.AdfClientId,
@@ -182,23 +183,101 @@
             this.dataLake.DeleteDirectory(directoryname).Wait();
         }
 
+        /// <summary>
+        /// Tests that invoking DeleteDirectory on a file throws an exception.
+        /// </summary>
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
         [TestMethod]
         public void DataLake_DeleteDirectoryOnFile_Fails()
         {
+            // ARRANGE
             string directoryname = "integrationtest_deletedirectoryonfile";
             this.dataLake.CreateDirectory(directoryname).Wait();
             string localFilePath = Guid.NewGuid().ToString() + ".txt";
             File.WriteAllText(localFilePath, "testing");
             string dataLakeFilePath = directoryname + "/" + localFilePath;
 
+            // ACT
             this.dataLake.CreateDirectory(directoryname).Wait();
             this.dataLake.UploadFile(localFilePath, dataLakeFilePath, true);
 
+            // ASSERT that invoking delete directory on a file throws an ArgumentException
             AssertHelper.Throws<ArgumentException>(() => this.dataLake.DeleteDirectory(dataLakeFilePath).Wait());
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryname, true).Wait();
+        }
+
+        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
+        [TestMethod]
+        public void DataLake_ConcatenateFiles_Works()
+        {
+            // ARRANGE. Write two local files, upload them to the data lake store and prepare paths and filenames
+            string localFilePath1 = "concatFile1.txt";
+            string localFilePath2 = "concatFile2.txt";
+            string dataLakeDirectoryName = "/integrationtest_concatenatefiles";
+            string dataLakeConcatFileName = string.Join("/", dataLakeDirectoryName, "concatFile.txt");
+            string dataLakeFileName1 = string.Join("/", dataLakeDirectoryName, localFilePath1);
+            string dataLakeFileName2 = string.Join("/", dataLakeDirectoryName, localFilePath2);
+            string downloadFileName = "./concatFile.txt";
+
+            File.WriteAllText(localFilePath1, "Hello");
+            File.WriteAllText(localFilePath2, "World");
+
+            this.dataLake.CreateDirectory(dataLakeDirectoryName).Wait();
+            this.dataLake.UploadFile(localFilePath1, dataLakeFileName1);
+            this.dataLake.UploadFile(localFilePath2, dataLakeFileName2);
+
+            // Delete the file to combine the other files in, if it exists
+            this.dataLake.DeleteFile(dataLakeConcatFileName).Wait();
+
+            // ACT
+            this.dataLake.ConcatenateFiles(new string[] { dataLakeFileName1, dataLakeFileName2 }, dataLakeConcatFileName).Wait();
+
+            // Download the file and check the file contents match the concatenation of the two local files.
+            this.dataLake.DownloadFile(dataLakeConcatFileName, downloadFileName);
+
+            string fileContents = File.ReadAllText(downloadFileName);
+
+            // ASSERT that the file contents match the concatenation of the uploaded files
+            Assert.AreEqual("HelloWorld", fileContents);
+
+            // Clean up remote and local files/directories
+            this.dataLake.DeleteDirectory(dataLakeDirectoryName, true).Wait();
+            File.Delete(localFilePath1);
+            File.Delete(localFilePath2);
+            File.Delete(downloadFileName);
+        }
+
+        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
+        [TestMethod]
+        public void DataLake_AppendToFile_Works()
+        {
+            // ARRANGE. Create file names and write the local file
+            string localFilePath = "appendToThisFile.txt";
+            string dataLakeDirectoryName = "/integrationtest_appendtofile";
+            string contentInOriginalFile = "Hello";
+            string contentToAppend = "World";
+            string dataLakeFileName = string.Join("/", dataLakeDirectoryName, localFilePath);
+            string downloadFileName = "./appendedToFile.txt";
+
+            File.WriteAllText(localFilePath, contentInOriginalFile);
+
+            // Create the directory, upload the file, append to it and download it.
+            this.dataLake.CreateDirectory(dataLakeDirectoryName).Wait();
+            this.dataLake.UploadFile(localFilePath, dataLakeFileName, true);
+            this.dataLake.AppendToFile(dataLakeFileName, contentToAppend).Wait();
+            this.dataLake.DownloadFile(dataLakeFileName, downloadFileName);
+
+            string contents = File.ReadAllText(downloadFileName);
+
+            // ASSERT that the contents of the file contain the original + the appended text
+            Assert.AreEqual(string.Join(string.Empty, contentInOriginalFile, contentToAppend), contents, "The content of the appended file did not match the expected");
+
+            // Clean up
+            this.dataLake.DeleteDirectory(dataLakeDirectoryName, true).Wait();
+            File.Delete(localFilePath);
+            File.Delete(downloadFileName);
         }
 
         /// <summary>

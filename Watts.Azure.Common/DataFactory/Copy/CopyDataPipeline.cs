@@ -9,12 +9,12 @@ namespace Watts.Azure.Common.DataFactory.Copy
     using Watts.Azure.Common.Interfaces.DataFactory;
 
     /// <summary>
-    /// A copy data pipeline that copies data from a source table to a target table.
+    /// A copy data pipeline that copies data from a source service to a target service, e.g. Azure Table Storage -> Azure Data Lake.
     /// </summary>
     public class CopyDataPipeline
     {
-        private readonly CopyTableSetup setup;
-        private readonly AzureDataFactoryTableCopy dataFactory;
+        private readonly CopySetup setup;
+        private readonly AzureDataFactoryCopy dataFactory;
 
         /// <summary>
         /// A progress delegate that we can report status on.
@@ -26,33 +26,35 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
 
         /// <summary>
-        /// Instantiate a copy data pipeline to replicate data from one table to another table.
+        /// Instantiate a copy data pipeline to replicate data from one service to another.
         /// </summary>
         /// <param name="factorySetup"></param>
         /// <param name="setup"></param>
         /// <param name="authentication"></param>
         /// <param name="progressDelegate"></param>
-        private CopyDataPipeline(AzureDataFactorySetup factorySetup, CopyTableSetup setup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
+        private CopyDataPipeline(AzureDataFactorySetup factorySetup, CopySetup setup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
         {
             this.setup = setup;
             this.progressDelegate = progressDelegate;
-            this.dataFactory = new AzureDataFactoryTableCopy(factorySetup, setup, authentication, progressDelegate);
+            this.dataFactory = new AzureDataFactoryCopy(factorySetup, setup, authentication, progressDelegate);
         }
 
-        public static CopyDataPipeline UsingDataFactorySettings(AzureDataFactorySetup setup, CopyTableSetup copySetup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
+        public static CopyDataPipeline UsingDataFactorySettings(AzureDataFactorySetup setup, CopySetup copySetup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
         {
             return new CopyDataPipeline(setup, copySetup, authentication, progressDelegate);
         }
 
-        public CopyDataPipeline FromTable(IAzureLinkedService source)
+        public CopyDataPipeline From(IAzureLinkedService source)
         {
             this.sourceService = source;
+            this.dataFactory.SourceService = this.sourceService;
             return this;
         }
 
         public CopyDataPipeline To(IAzureLinkedService target)
         {
             this.targetService = target;
+            this.dataFactory.TargetService = this.targetService;
             return this;
         }
 
@@ -71,20 +73,20 @@ namespace Watts.Azure.Common.DataFactory.Copy
                 this.dataFactory.MonitorStatusUntilDone(this.setup.TargetDatasetName, existingPipeline.Properties.Start.Value, existingPipeline.Properties.End.Value);
             }
 
-            if (this.setup.CreateTargetTableIfNotExists)
+            if (this.setup.CreateTargetIfNotExists)
             {
                 LinkedServiceHelper helper = new LinkedServiceHelper(this.Report);
                 helper.CreateTargetIfItDoesntExist(this.sourceService, this.targetService);
             }
 
-            var tableStructure = this.sourceService.GetStructure();
+            var dataStructure = this.sourceService.GetStructure();
 
             this.dataFactory.CreateDataFactory();
 
-            this.dataFactory.LinkService(this.sourceService.ConnectionString, this.setup.SourceLinkedServiceName);
-            this.dataFactory.LinkService(this.targetService.ConnectionString, this.setup.TargetLinkedServiceName);
+            this.dataFactory.LinkService(this.sourceService, this.setup.SourceLinkedServiceName);
+            this.dataFactory.LinkService(this.targetService, this.setup.TargetLinkedServiceName);
 
-            this.dataFactory.CreateDatasets(this.sourceService.Name, this.targetService.Name, tableStructure);
+            this.dataFactory.CreateDatasets(this.sourceService.Name, this.targetService.Name, dataStructure);
 
             DateTime pipelineActivePeriodStartTime = DateTime.Now.ToUniversalTime().AddHours(-100);
             DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(200);

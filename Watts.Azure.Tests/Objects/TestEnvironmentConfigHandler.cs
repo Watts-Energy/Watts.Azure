@@ -54,6 +54,7 @@
             DataLakeEnvironment = new PredefinedDataLakeStoreEnvironment()
             {
                 SubscriptionId = "Subscription id",
+                ResourceGroupName = "Resource group name",
                 ActiveDirectoryTenantId = "Ad tenant id",
                 AdfClientId = "Application client id",
                 ClientSecret = "Application client secret",

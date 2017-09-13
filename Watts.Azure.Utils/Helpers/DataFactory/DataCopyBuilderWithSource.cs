@@ -1,19 +1,20 @@
 namespace Watts.Azure.Utils.Helpers.DataFactory
 {
     using Common.Interfaces.Storage;
+    using Watts.Azure.Common.Interfaces.DataFactory;
 
     public class DataCopyBuilderWithSource : DataCopyBuilderWithAuthentication
     {
         public DataCopyBuilderWithSource(
                 DataCopyBuilderWithAuthentication parent,
-                IAzureTableStorage sourceTable,
+                IAzureLinkedService sourceTable,
                 string sourceQuery = "") : base(parent, parent.Authenticator)
         {
-            this.SourceTable = sourceTable;
+            this.Source = sourceTable;
             this.SourceQuery = sourceQuery;
         }
 
-        public IAzureTableStorage SourceTable { get; set; }
+        public IAzureLinkedService Source { get; set; }
 
         public string SourceQuery { get; set; } = string.Empty;
 
@@ -23,9 +24,9 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
             return this;
         }
 
-        public DataCopyBuilderWithSourceAndTarget ToTable(IAzureTableStorage targetTable)
+        public DataCopyBuilderWithSourceAndTarget To(IAzureLinkedService target)
         {
-            return new DataCopyBuilderWithSourceAndTarget(this, targetTable);
+            return new DataCopyBuilderWithSourceAndTarget(this, target);
         }
     }
 }

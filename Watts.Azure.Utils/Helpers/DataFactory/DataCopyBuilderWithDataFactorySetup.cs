@@ -14,7 +14,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
         public DataCopyBuilderWithCopySetup UsingDefaultCopySetup()
         {
-            CopyTableSetup setup = new CopyTableSetup()
+            CopySetup setup = new CopySetup()
             {
                 SourceDatasetName = "SourceDataset",
                 SourceLinkedServiceName = "SourceLinkedService",
@@ -26,7 +26,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
             return new DataCopyBuilderWithCopySetup(this, setup);
         }
 
-        public DataCopyBuilderWithCopySetup UsingCopySetup(CopyTableSetup setup)
+        public DataCopyBuilderWithCopySetup UsingCopySetup(CopySetup setup)
         {
             return new DataCopyBuilderWithCopySetup(this, setup);
         }

@@ -2,18 +2,19 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 {
     using System;
     using Common.DataFactory.Copy;
-    using Common.Interfaces.Storage;
+    using Watts.Azure.Common.Interfaces.DataFactory;
 
     public class DataCopyBuilderWithSourceAndTarget : DataCopyBuilderWithSource
     {
         private Action<string> progressDelegate;
 
-        public DataCopyBuilderWithSourceAndTarget(DataCopyBuilderWithSource parent, IAzureTableStorage targetTable) : base(parent, parent.SourceTable, parent.SourceQuery)
+        public DataCopyBuilderWithSourceAndTarget(DataCopyBuilderWithSource parent, IAzureLinkedService target)
+            : base(parent, parent.Source, parent.SourceQuery)
         {
-            this.TargetTable = targetTable;
+            this.Target = target;
         }
 
-        public IAzureTableStorage TargetTable { get; set; }
+        public IAzureLinkedService Target { get; set; }
 
         public bool CleanUpAfter { get; set; } = true;
 
@@ -29,11 +30,17 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
             return this;
         }
 
+        public DataCopyBuilderWithSourceAndTarget ReportProgressTo(Action<string> progressAction)
+        {
+            this.progressDelegate = progressAction;
+            return this;
+        }
+
         public void StartCopy()
         {
             CopyDataPipeline pipeline = CopyDataPipeline.UsingDataFactorySettings(this.DataFactorySetup, this.CopySetup, this.Authenticator, this.progressDelegate);
 
-            pipeline.FromTable(this.SourceTable).To(this.TargetTable).UsingSourceQuery(this.SourceQuery).Start();
+            pipeline.From(this.Source).To(this.Target).UsingSourceQuery(this.SourceQuery).Start();
 
             if (this.CleanUpAfter)
             {

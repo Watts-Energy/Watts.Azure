@@ -10,12 +10,38 @@ namespace Watts.Azure.Common.Security
     public class AzureActiveDirectoryAuthentication : IAzureActiveDirectoryAuthentication
     {
         private readonly string subscriptionId;
+        private readonly string resourceGroupName;
         private readonly AppActiveDirectoryAuthenticationCredentials credentials;
 
-        public AzureActiveDirectoryAuthentication(string subscriptionId, AppActiveDirectoryAuthenticationCredentials credentials)
+        public AzureActiveDirectoryAuthentication(string subscriptionId, string resourceGroupName, AppActiveDirectoryAuthenticationCredentials credentials)
         {
             this.subscriptionId = subscriptionId;
+            this.resourceGroupName = resourceGroupName;
             this.credentials = credentials;
+        }
+
+        public string SubscriptionId
+        {
+            get
+            {
+                return this.subscriptionId;
+            }
+        }
+
+        public string ResourceGroupName
+        {
+            get
+            {
+                return this.resourceGroupName;
+            }
+        }
+
+        public AppActiveDirectoryAuthenticationCredentials Credentials
+        {
+            get
+            {
+                return this.credentials;
+            }
         }
 
         public string GetAuthorizationToken()

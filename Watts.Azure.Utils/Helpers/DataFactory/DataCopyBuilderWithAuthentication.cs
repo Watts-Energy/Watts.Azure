@@ -2,6 +2,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 {
     using Common.Interfaces.Security;
     using Common.Interfaces.Storage;
+    using Watts.Azure.Common.Interfaces.DataFactory;
 
     public class DataCopyBuilderWithAuthentication : DataCopyBuilderWithCopySetup
     {
@@ -13,9 +14,9 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
         public IAzureActiveDirectoryAuthentication Authenticator { get; set; }
 
-        public DataCopyBuilderWithSource CopyFromTable(IAzureTableStorage storage)
+        public DataCopyBuilderWithSource CopyFrom(IAzureLinkedService source)
         {
-            return new DataCopyBuilderWithSource(this, storage);
+            return new DataCopyBuilderWithSource(this, source);
         }
     }
 }

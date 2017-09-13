@@ -13,25 +13,34 @@ namespace Watts.Azure.Common.DataFactory.Copy
     using Microsoft.Azure.Management.DataFactories.Common.Models;
     using Microsoft.Azure.Management.DataFactories.Models;
     using Storage.Objects;
+    using Watts.Azure.Common.Interfaces.DataFactory;
 
     /// <summary>
-    /// Azure Data Factory copy of data from Azure Table Storage -> Azure Table Storage.
+    /// Azure Data Factory copy of data from one storage service to another
     /// </summary>
-    public class AzureDataFactoryTableCopy
+    public class AzureDataFactoryCopy
     {
+        private IAzureLinkedService sourceService;
+        private IAzureLinkedService targetService;
+
+        private readonly AzureDatasetHelper datasetHelper;
+        private readonly LinkedServiceHelper linkedServiceHelper;
+
         private readonly AzureDataFactorySetup factorySetup;
-        private readonly AzureTableSource source;
-        private readonly AzureTableSink sink;
+        private CopySource source;
+        private CopySink sink;
 
         private readonly IAzureActiveDirectoryAuthentication authentication;
 
-        private readonly CopyTableSetup copySetup;
+        private readonly CopySetup copySetup;
         private readonly Action<string> progressDelegate;
 
         private int authenticationRetries = 0;
 
-        public AzureDataFactoryTableCopy(AzureDataFactorySetup factorySetup, CopyTableSetup copySetup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
+        public AzureDataFactoryCopy(AzureDataFactorySetup factorySetup, CopySetup copySetup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
         {
+            this.datasetHelper = new AzureDatasetHelper();
+            this.linkedServiceHelper = new LinkedServiceHelper(progressDelegate);
             this.factorySetup = factorySetup;
             this.copySetup = copySetup;
             this.authentication = authentication;
@@ -40,14 +49,32 @@ namespace Watts.Azure.Common.DataFactory.Copy
             Uri resourceManagerUri = new Uri(Constants.ResourceManagerEndpoint);
 
             this.Client = new DataFactoryManagementClient(authentication.GetTokenCredentials(), resourceManagerUri);
-
-            this.source = new AzureTableSource();
-
-            this.sink = new AzureTableSink();
-            this.sink.AzureTablePartitionKeyName = "PartitionKey";
-            this.sink.AzureTableRowKeyName = "RowKey";
-            this.sink.AzureTableInsertType = "Replace";
         }
+
+        public IAzureLinkedService SourceService { get
+            {
+                return this.sourceService;
+            }
+            set {
+                this.sourceService = value;
+                this.source = this.datasetHelper.GetCopySource(this.sourceService);
+
+            }
+        }
+
+        public IAzureLinkedService TargetService
+        {
+            get
+            {
+                return this.targetService;
+            }
+            set
+            {
+                this.targetService = value;
+                this.sink = this.datasetHelper.GetCopySink(this.targetService);
+            }
+        }
+            
 
         public DataFactoryManagementClient Client { get; private set; }
 
@@ -58,18 +85,21 @@ namespace Watts.Azure.Common.DataFactory.Copy
         public void UsingSourceQuery(string queryString)
         {
             this.Report($"Will use source query {queryString}");
-            this.source.AzureTableSourceQuery = queryString;
+            this.datasetHelper.SetSourceQuery(this.source, queryString);
         }
 
         /// <summary>
-        /// Link a service to the copy (e.g. the source of the sink table)
+        /// Link a service to the copy (e.g. the source or the sink)
         /// </summary>
         /// <param name="connectionString"></param>
         /// <param name="linkedServiceName"></param>
         /// <returns></returns>
-        public bool LinkService(string connectionString, string linkedServiceName)
+        public bool LinkService(IAzureLinkedService service, string linkedServiceName)
         {
             this.Report($"Adding linked service {linkedServiceName}");
+
+            LinkedServiceTypeProperties serviceTypeProperties = this.linkedServiceHelper.GetLinkedServiceTypeProperties(service);
+
             var result = this.Client.LinkedServices.CreateOrUpdate(
                 this.factorySetup.ResourceGroupName,
                 this.factorySetup.Name,
@@ -78,7 +108,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                     LinkedService = new LinkedService()
                     {
                         Name = linkedServiceName,
-                        Properties = new LinkedServiceProperties(new AzureStorageLinkedService(connectionString))
+                        Properties = new LinkedServiceProperties(serviceTypeProperties),
                     }
                 });
 
@@ -89,13 +119,13 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// <summary>
         /// Create the datasets for the source and sink.
         /// </summary>
-        /// <param name="sourceTableName"></param>
-        /// <param name="targetTableName"></param>
-        /// <param name="tableStructure"></param>
+        /// <param name="sourceDatasetName"></param>
+        /// <param name="targetDatasetName"></param>
+        /// <param name="dataStructure"></param>
         /// <returns></returns>
-        public bool CreateDatasets(string sourceTableName, string targetTableName, DataStructure tableStructure)
+        public bool CreateDatasets(string sourceDatasetName, string targetDatasetName, DataStructure dataStructure)
         {
-            var structure = tableStructure.DataElements;
+            var structure = dataStructure.DataElements;
 
             this.Report($"Creating source dataset with structure {string.Join(", ", structure.Select(p => p.Name))}");
             var sourceResult = this.Client.Datasets.CreateOrUpdate(
@@ -109,10 +139,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                         Properties = new DatasetProperties()
                         {
                             LinkedServiceName = this.copySetup.SourceLinkedServiceName,
-                            TypeProperties = new AzureTableDataset()
-                            {
-                                TableName = sourceTableName
-                            },
+                            TypeProperties = this.datasetHelper.GetTypeProperties(this.SourceService),
                             External = true,
                             Availability = new Availability()
                             {
@@ -143,10 +170,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                         Properties = new DatasetProperties()
                         {
                             LinkedServiceName = this.copySetup.TargetLinkedServiceName,
-                            TypeProperties = new AzureTableDataset()
-                            {
-                                TableName = targetTableName
-                            },
+                            TypeProperties = this.datasetHelper.GetTypeProperties(this.TargetService, this.copySetup.TargetDatasetName),
 
                             Availability = new Availability()
                             {
@@ -202,7 +226,6 @@ namespace Watts.Azure.Common.DataFactory.Copy
         public void CreatePipeline(string sourceDatasetName, string targetDatasetName, DateTime pipelineActivePeriodStartTime, DateTime pipelineActivePeriodEndTime)
         {
             this.Report($"Creating pipeline {sourceDatasetName} -> {targetDatasetName}...");
-            string pipelineName = "PipelineTableSample";
 
             this.Client.Pipelines.CreateOrUpdate(
                 this.factorySetup.ResourceGroupName,
@@ -211,10 +234,10 @@ namespace Watts.Azure.Common.DataFactory.Copy
                 {
                     Pipeline = new Pipeline()
                     {
-                        Name = pipelineName,
+                        Name = this.copySetup.CopyPipelineName,
                         Properties = new PipelineProperties()
                         {
-                            Description = "Demo Pipeline for data transfer between tables",
+                            Description = "Pipeline for data transfer between two services",
 
                             // Initial value for pipeline's active period. With this, you won't need to set slice status
                             Start = pipelineActivePeriodStartTime,
@@ -224,7 +247,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                         {
                             new Activity()
                             {
-                                Name = "TableToTable",
+                                Name = Guid.NewGuid().ToString(),
                                 Inputs = new List<ActivityInput>()
                                 {
                                     new ActivityInput() { Name = sourceDatasetName }

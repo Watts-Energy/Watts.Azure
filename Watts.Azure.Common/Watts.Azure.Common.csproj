@@ -136,11 +136,12 @@
     <Compile Include="Batch\Objects\TaskMonitorStatusReport.cs" />
     <Compile Include="Batch\Objects\TaskOutput.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DataFactory\Copy\AzureDataFactoryTableCopy.cs" />
+    <Compile Include="DataFactory\Copy\AzureDataFactoryCopy.cs" />
     <Compile Include="DataFactory\Copy\CopyDataPipeline.cs" />
-    <Compile Include="DataFactory\Copy\CopyTableSetup.cs" />
+    <Compile Include="DataFactory\Copy\CopySetup.cs" />
     <Compile Include="DataFactory\Copy\DataMovementHistoryEntity.cs" />
     <Compile Include="DataFactory\General\AzureDataFactorySetup.cs" />
+    <Compile Include="DataFactory\General\AzureDatasetHelper.cs" />
     <Compile Include="DataFactory\General\LinkedServiceHelper.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Exceptions\AzureFileshareDoesNotExistException.cs" />
@@ -162,6 +163,7 @@
     <Compile Include="Interfaces\General\IPrepareInputFiles.cs" />
     <Compile Include="Interfaces\Security\IAzureActiveDirectoryAuthentication.cs" />
     <Compile Include="Interfaces\Storage\IAzureBlobStorage.cs" />
+    <Compile Include="Interfaces\Storage\IAzureDataLakeStore.cs" />
     <Compile Include="Interfaces\Storage\IAzureTableStorage.cs" />
     <Compile Include="Interfaces\Storage\IFileshare.cs" />
     <Compile Include="Interfaces\Wrappers\IAzureBatchClient.cs" />

@@ -5,12 +5,12 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
     public class DataCopyBuilderWithCopySetup : DataCopyBuilderWithDataFactorySetup
     {
-        public DataCopyBuilderWithCopySetup(DataCopyBuilderWithDataFactorySetup parent, CopyTableSetup copySetup) : base(parent, parent.DataFactorySetup)
+        public DataCopyBuilderWithCopySetup(DataCopyBuilderWithDataFactorySetup parent, CopySetup copySetup) : base(parent, parent.DataFactorySetup)
         {
             this.CopySetup = copySetup;
         }
 
-        public CopyTableSetup CopySetup { get; set; }
+        public CopySetup CopySetup { get; set; }
 
         public DataCopyBuilderWithCopySetup WithTimeoutInMinutes(int numberOfMinutes)
         {
@@ -20,7 +20,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
         public DataCopyBuilderWithCopySetup CreateTargetTableIfNotExists()
         {
-            this.CopySetup.CreateTargetTableIfNotExists = true;
+            this.CopySetup.CreateTargetIfNotExists = true;
             return this;
         }
 

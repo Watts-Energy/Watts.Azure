@@ -188,7 +188,7 @@
     <Compile Include="Storage\Objects\LogTableStorage.cs" />
     <Compile Include="Storage\Objects\StorageAccountSettings.cs" />
     <Compile Include="Storage\Objects\TableColumn.cs" />
-    <Compile Include="Storage\Objects\TableStructure.cs" />
+    <Compile Include="Storage\Objects\DataStructure.cs" />
     <Compile Include="Storage\Objects\Wrappers\AzureBatchClient.cs" />
     <Compile Include="Storage\Objects\Wrappers\AzureBlobClient.cs" />
     <Compile Include="Storage\Objects\Wrappers\JobOperationsWrapper.cs" />

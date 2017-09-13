@@ -20,7 +20,7 @@ namespace Watts.Azure.Common.Storage.Objects
         public List<DataElement> DataElements { get; set; }
 
         /// <summary>
-        /// Add a column to the table structure. If it already exists of the type of the column is "null", nothing happens.
+        /// Add a column to the data structure. If it already exists of the type of the column is "null", nothing happens.
         /// </summary>
         /// <param name="name"></param>
         /// <param name="property"></param>

@@ -51,11 +51,14 @@ namespace Watts.Azure.Common.DataFactory.Copy
             this.Client = new DataFactoryManagementClient(authentication.GetTokenCredentials(), resourceManagerUri);
         }
 
-        public IAzureLinkedService SourceService { get
+        public IAzureLinkedService SourceService
+        {
+            get
             {
                 return this.sourceService;
             }
-            set {
+            set
+            {
                 this.sourceService = value;
                 this.source = this.datasetHelper.GetCopySource(this.sourceService);
 
@@ -74,7 +77,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                 this.sink = this.datasetHelper.GetCopySink(this.targetService);
             }
         }
-            
+
 
         public DataFactoryManagementClient Client { get; private set; }
 
@@ -234,7 +237,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                 {
                     Pipeline = new Pipeline()
                     {
-                        Name = this.copySetup.CopyPipelineName,
+                        Name = this.copySetup.CopyPipelineName ?? Guid.NewGuid().ToString(),
                         Properties = new PipelineProperties()
                         {
                             Description = "Pipeline for data transfer between two services",

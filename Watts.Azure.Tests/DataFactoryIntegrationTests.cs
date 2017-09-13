@@ -147,7 +147,7 @@
             Assert.AreEqual(numberOfEntities + 1, contents.Length);
 
             // Clean up
-            targetDataLake.DeleteDirectory(string.Empty).Wait();
+            targetDataLake.DeleteDirectory(string.Empty, true).Wait();
             sourceTable.DeleteIfExists();
             File.Delete(downloadFileName);
         }

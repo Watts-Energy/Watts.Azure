@@ -127,7 +127,7 @@
         /// </summary>
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
         [TestMethod]
-        public void DataLake_DeleteDirectoryWhenNotEmpty_WithForce_Works()
+        public void DataLake_DeleteDirectoryWhenNotEmpty_WithForce()
         {
             // ARRANGE
             string directoryName = "integrationtest_deletedirectorywithforce";
@@ -146,9 +146,27 @@
             File.Delete(filepath);
         }
 
+        /// <summary>
+        /// Tests that a data lake store can delete the directory which is set to be its root directory.
+        /// </summary>
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
         [TestMethod]
-        public void DataLake_DeleteFile_Works()
+        public void DataLake_DeleteDirectoryWhichIsRoot()
+        {
+            AzureDataLakeStore lakeWithNonRootDirectory = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, "/deletemedir", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+
+            lakeWithNonRootDirectory.CreateDirectory(string.Empty).Wait();
+
+            Assert.IsTrue(lakeWithNonRootDirectory.PathExists(lakeWithNonRootDirectory.Directory));
+
+            lakeWithNonRootDirectory.DeleteDirectory(string.Empty, true).Wait();
+
+            Assert.IsFalse(lakeWithNonRootDirectory.PathExists(lakeWithNonRootDirectory.Directory));
+        }
+
+        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
+        [TestMethod]
+        public void DataLake_DeleteFile()
         {
             // ARRANGE
             string directoryName = "integrationtest_deletefile";
@@ -210,7 +228,7 @@
 
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
         [TestMethod]
-        public void DataLake_ConcatenateFiles_Works()
+        public void DataLake_ConcatenateFiles()
         {
             // ARRANGE. Write two local files, upload them to the data lake store and prepare paths and filenames
             string localFilePath1 = "concatFile1.txt";
@@ -251,7 +269,7 @@
 
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
         [TestMethod]
-        public void DataLake_AppendToFile_Works()
+        public void DataLake_AppendToFile()
         {
             // ARRANGE. Create file names and write the local file
             string localFilePath = "appendToThisFile.txt";

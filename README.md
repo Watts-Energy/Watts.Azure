@@ -2,7 +2,7 @@
 
 **Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
 having to know all the details and coding everything yourself. In addition, it contains utilities to make working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
-[Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/) easier.
+[Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/) and [Azure Data Lake Store](https://azure.microsoft.com/en-us/services/data-lake-store/) easier.
 
 Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
 code things from scratch and using the Azure Batch .NET API. It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
@@ -289,38 +289,10 @@ The machines offered in Azure do not come with R pre-installed so you must do on
   * **LINUX** You don't need to do anything really. Watts.Azure will run *apt-get install -y r-base* on the node before 
   executing your script. You can, however, not currently select the version of R you want to run when running in Linux.
 
-## Test project
-In order to execute Integration Tests and Manual Tests in this project you will need to fill in various account information related to batch.
 
-When you run the first test, a file will be generated in the root directory of the test project, named **testEnvironment.testenv**. The file contains a JSON object specifying various required settings and credentials.
-
-**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited. Don't change that or rename the file, as that could mean you'd be uploading your Azure credentials to github. 
-We will of course review any pull requests and make sure that noone does this by accident, but it's better to be completely sure.
-
-Add your relevant credentials to the file (which contains a json object deserialized into TestEnvironmentConfig.cs when each Integration/Manual test starts).
-
-In case you only want to run Integration/Manual tests relevant to Batch, you will only need to fill in the settings:
-- BatchAccountName
-- BatchAccountKey
-- BatchAccountUrl
-- StorageAccountName
-- StorageAccountKey
-
-To run Data Factory (Copy data) tests, fill in 
-- SubscriptionId
-- ActiveDirectoryTenantId
-- AdfClientId
-- ClientSecret
-- StorageAccountName
-- StorageAccountKey
-
-The details of how to obtain the keys/secrets etc. are explained in the next section:
-
-In addition to the above there's a single test of using Azure File Share to upload/download data. To execute those you need to fill in 
-- FileshareConnectionString
 
 # Azure Data Factory
-We support Copy Table -> Table currently through the fluent interface.
+We currently support Copy Table -> Table and Table -> DataLake, through the fluent interface.
 
 Similarly to working with batch, you will need an environment that implements *IPredefinedDataCopyEnvironment*. 
 Implementing this environment requires you to find the following information:
@@ -384,3 +356,63 @@ DataCopyBuilder
 ```
 The entities have now been copied from source to target.
 You can use the timestamp of entities to perform incremental loads.
+
+## Azure Data Lake
+Watts.Azure contains some utilities for interacting with Azure Data Lake and makes authentication much easier than implementing it yourself.
+Watts Azure uses Service Principal Authentication when authenticating towards Azure Data Lake and all you need to do is to provide the credentials. 
+Specifically, it needs an instance of *IAzureActiveDirectoryAuthentication*, which must specify
+- SubscriptionId (find it through the [Azure portal](https://portal.azure.com)).
+- ResourceGroupName (only necessary if you're using it with Data Factory copy)
+- Active Directory Tenant Id (https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-howto-tenant)
+- Application client id
+- Application client secret
+
+See the section [**Application client id / client secret**](#application-client-id-/-client-secret) for an explanation of how to obtain the client id.
+
+**IMPORTANT NOTE** 
+To communicate with Azure Data Lake Store you will need to give the application you're using to authenticate against it access to the data store (The app registration whose clientid/secret you've specified above).
+To do this, go to the [Azure Portal](https://portal.azure.com) and 
+- navigate to the Data Lake Store in question,
+- select 'Data Explorer'
+- click the root folder which you want to grant access to and then select 'Access' in the top menu
+- click 'Add' and select the application
+- Grant the application 'Read', 'Write' and 'Execute' permissions.
+- Don't forget to save.
+
+## Test project
+In order to execute Integration Tests and Manual Tests in this project you will need to fill in various account information related to batch.
+
+When you run the first test, a file will be generated in the root directory of the test project, named **testEnvironment.testenv**. The file contains a JSON object specifying various required settings and credentials.
+
+**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited. Don't change that or rename the file, as that could mean you'd be uploading your Azure credentials to github. 
+We will of course review any pull requests and make sure that noone does this by accident, but it's better to be completely sure.
+
+Add your relevant credentials to the file (which contains a json object deserialized into TestEnvironmentConfig.cs when each Integration/Manual test starts).
+
+In case you only want to run Integration/Manual tests relevant to Batch, you will only need to fill in the settings:
+- BatchAccountName
+- BatchAccountKey
+- BatchAccountUrl
+- StorageAccountName
+- StorageAccountKey
+
+To run Data Factory (Copy data) and Data Lake tests, fill in 
+- SubscriptionId
+- ActiveDirectoryTenantId
+- AdfClientId
+- ClientSecret
+- StorageAccountName
+- StorageAccountKey
+
+and additionally 
+- DataLakeStoreName
+
+if you want to run tests that involve Azure Data Lake.
+Both the **DataCopyEnvironment** and **DataLakeEnvironment** have the above settings, except *DataLakeStoreName* which is exclusive to Data lake (obviously).
+The settings are replicated, because it is not given that your Data lake store and Data factory share these settings. 
+Your Data lake store could even be in a different subscription than your Fata factory.
+
+The details of how to obtain the keys/secrets etc. are explained in the next section:
+
+In addition to the above there's a single test of using Azure File Share to upload/download data. To execute that you need to fill in 
+- FileshareConnectionString

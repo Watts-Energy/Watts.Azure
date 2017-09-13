@@ -44,17 +44,38 @@
             }
         }
 
+        /// <summary>
+        /// The name of the data lake store.
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// The base directory. All paths specified in methods are relative to this.
+        /// </summary>
         public string Directory { get; set; }
 
+        /// <summary>
+        /// Get the connection string for the Data lake store
+        /// </summary>
         public string ConnectionString { get; }
 
+        /// <summary>
+        /// Has no meaning in AzureDataLakeStore.cs but must be implemenented as IAzureLinkedService. 
+        /// TODO find a way to handle this so that not all IAzureLinkedService's must implement it...
+        /// </summary>
+        /// <param name="partitionKeyType"></param>
+        /// <param name="rowKeyType"></param>
+        /// <returns></returns>
         public DataStructure GetStructure(string partitionKeyType = null, string rowKeyType = null)
         {
             return new DataStructure();
         }
 
+        /// <summary>
+        /// Creates a directory at the specified path, relative to the Directory property.
+        /// </summary>
+        /// <param name="relativePath"></param>
+        /// <returns></returns>
         public async Task CreateDirectory(string relativePath)
         {
             string path = string.Join("", this.Directory, relativePath);
@@ -85,6 +106,11 @@
             }
         }
 
+        /// <summary>
+        /// Delete the file at the specified (relative) path, if it exists.
+        /// </summary>
+        /// <param name="relativePath"></param>
+        /// <returns></returns>
         public async Task DeleteFile(string relativePath)
         {
             string path = string.Join(string.Empty, this.Directory, relativePath);
@@ -101,9 +127,15 @@
             }
         }
 
-        public bool PathExists(string relativePath)
+        /// <summary>
+        /// Get a boolean indicating whether the path exists in the data store.
+        /// NOTE that this is an absolute path, i.e. not relative to the root Directory property.
+        /// </summary>
+        /// <param name="absolutePath"></param>
+        /// <returns></returns>
+        public bool PathExists(string absolutePath)
         {
-            return this.fileSystemClient.FileSystem.PathExists(this.Name, relativePath);
+            return this.fileSystemClient.FileSystem.PathExists(this.Name, absolutePath);
         }
 
         /// <summary>
@@ -117,21 +149,44 @@
             this.fileSystemClient.FileSystem.UploadFile(this.Name,   localSourceFilePath, string.Join("/", this.Directory, destinationRelativeFilePath), overwrite: force);
         }
 
+        /// <summary>
+        /// Get information about the file/directory at the specified path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public FileStatusProperties GetItemInfo(string path)
         {
             return this.fileSystemClient.FileSystem.GetFileStatusAsync(this.Name, path).Result.FileStatus;
         }
 
+        /// <summary>
+        /// List the items at the specified path.
+        /// </summary>
+        /// <param name="directoryPath"></param>
+        /// <returns></returns>
         public List<FileStatusProperties> ListItems(string directoryPath)
         {
             return this.fileSystemClient.FileSystem.ListFileStatus(this.Name, directoryPath).FileStatuses.FileStatus.ToList();
         }
 
+        /// <summary>
+        /// Concatenate the files at 'srcFilePaths' into one file at 'destFilePath'.
+        /// NOTE that this deletes the files at 'srcFilePaths'
+        /// </summary>
+        /// <param name="srcFilePaths"></param>
+        /// <param name="destFilePath"></param>
+        /// <returns></returns>
         public async Task ConcatenateFiles(string[] srcFilePaths, string destFilePath)
         {
             await this.fileSystemClient.FileSystem.ConcatAsync(this.Name, destFilePath, srcFilePaths);
         }
 
+        /// <summary>
+        /// Append the content to the file at the given path.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
         public async Task AppendToFile(string path, string content)
         {
             using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(content)))
@@ -140,6 +195,12 @@
             }
         }
 
+        /// <summary>
+        /// Download a file from the Data lake store to a local file. 
+        /// </summary>
+        /// <param name="srcFilePath"></param>
+        /// <param name="destFilePath"></param>
+        /// <param name="overwrite"></param>
         public void DownloadFile(string srcFilePath, string destFilePath, bool overwrite = false)
         {
             this.fileSystemClient.FileSystem.DownloadFile(this.Name, srcFilePath, destFilePath, overwrite: overwrite);

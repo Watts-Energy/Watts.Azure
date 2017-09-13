@@ -24,6 +24,8 @@ To run Data Factory (Copy data) tests, fill in
 - StorageAccountName
 - StorageAccountKey
 
+for the Data Factory account/app registration as well as all the same settings for the DataL
+
 The details of how to obtain the keys/secrets etc. are explained in the main project README.
 
 In addition to the above there's a single test of using Azure File Share to upload/download data. To execute those you need to fill in 

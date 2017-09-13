@@ -33,7 +33,7 @@ namespace Watts.Azure.Tests
         /// </summary>
         [TestMethod]
         [TestCategory("IntegrationTest"), TestCategory("Azure Blob Storage")]
-        public void StoreBlob_Works()
+        public void StoreBlob()
         {
             // ARRANGE
             string blobName = "myBlob.txt";

@@ -147,7 +147,7 @@
         /// </summary>
         [TestMethod]
         [TestCategory("ManualTest")]
-        public void RunSimpleRScriptOWindowsAndStoreOutput_Works()
+        public void RunSimpleRScriptOWindowsAndStoreOutput()
         {
             // ARRANGE
             BatchOutputContainer outputContainer = new BatchOutputContainer(this.environment.GetBatchStorageConnectionString());
@@ -204,7 +204,7 @@
         /// </summary>
         [TestCategory("ManualTest")]
         [TestMethod]
-        public void ExecuteHybridBatch_Works()
+        public void ExecuteHybridBatch()
         {
             // ARRANGE
             // Prepare the output container that will hold the batch output

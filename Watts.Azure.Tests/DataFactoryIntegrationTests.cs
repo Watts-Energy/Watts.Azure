@@ -51,7 +51,7 @@
 
         [TestCategory("IntegrationTest"), TestCategory("DataFactory")]
         [TestMethod]
-        public void CopyData_SimpleDataCopyTableToTable_Works()
+        public void CopyData_SimpleDataCopyTableToTable()
         {
             // ARRANGE
             // Create the source and target tables

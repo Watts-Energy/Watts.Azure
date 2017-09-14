@@ -1,5 +1,7 @@
 namespace Watts.Azure.Common.Storage.Objects
 {
+    using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Management.Automation;
     using Interfaces.Storage;
@@ -88,7 +90,7 @@ namespace Watts.Azure.Common.Storage.Objects
                 {
                     // Get a reference to the file we created previously.
                     var cloudFile = shareRootDirectory.GetFileReference(filename);
-                    cloudFile.DownloadToFile(localFilePath, FileMode.Create);
+                    cloudFile.DownloadToFile(localFilePath, FileMode.CreateNew);
                 }
             }
             else
@@ -115,10 +117,23 @@ namespace Watts.Azure.Common.Storage.Objects
             {
                 using (PowerShell powershellInstance = PowerShell.Create())
                 {
+                    powershellInstance.AddScript("Import-Module Azure.Storage");
                     powershellInstance.AddScript($"$storageContext = New-AzureStorageContext {storageAccountName} {storageAccountKey}");
                     powershellInstance.AddScript($"$share = New-AzureStorageShare {this.shareName} -Context $storageContext");
 
                     powershellInstance.Invoke();
+
+                    if(powershellInstance.Streams.Error.Count > 0)
+                    {
+                        List<Exception> errors = new List<Exception>();
+
+                        foreach(var error in powershellInstance.Streams.Error)
+                        {
+                            errors.Add(error.Exception);
+                        }
+
+                        throw new AggregateException(errors);
+                    }
                 }
             }
         }

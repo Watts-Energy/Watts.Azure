@@ -1,7 +1,7 @@
 # Introduction
 
 **Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
-having to know all the details and coding everything yourself. In addition, it contains utilities to make working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
+having to know all the details and coding everything yourself. In addition, it contains utilities to make aspects of working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
 [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/) and [Azure Data Lake Store](https://azure.microsoft.com/en-us/services/data-lake-store/) easier.
 
 Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
@@ -413,8 +413,7 @@ In order to execute Integration Tests and Manual Tests in this project you will 
 
 When you run the first test, a file will be generated in the root directory of the test project, named **testEnvironment.testenv**. The file contains a JSON object specifying various required settings and credentials.
 
-**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited. Don't change that or rename the file, as that could mean you'd be uploading your Azure credentials to github. 
-We will of course review any pull requests and make sure that noone does this by accident, but it's better to be completely sure.
+**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited. Don't change that or rename the file, as that could mean you'd be accidentally uploading your Azure credentials to github. 
 
 Add your relevant credentials to the file (which contains a json object deserialized into TestEnvironmentConfig.cs when each Integration/Manual test starts).
 

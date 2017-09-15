@@ -380,7 +380,11 @@ DataCopyBuilder
     .StartCopy();
 ```
 The entities have now been copied from source to target.
-You can use the timestamp of entities to perform incremental loads.
+
+You can use the timestamp of entities to perform incremental loads by e.g. specifying a query string as argument to WithSourceQuery(string query).
+E.g. when moving data from Table Storage you could write ```Timestamp gt datetime'{lastBackupStarted.Value.ToIso8601()}'``` which selects
+only entities from the source which have been modified since 'lastBackupStarted' (which would be a DateTime/DateTimeOffset). ```ToIso8601``` simply
+ensures that the date is in a format Table Storage understands.
 
 ## Azure Data Lake
 Watts.Azure contains some utilities for interacting with Azure Data Lake and makes authentication much easier than implementing it yourself.
@@ -441,3 +445,4 @@ The details of how to obtain the keys/secrets etc. are explained in the next sec
 
 In addition to the above there's a single test of using Azure File Share to upload/download data. To execute that you need to fill in 
 - FileshareConnectionString
+which should be the connection string to the storage account that has the fileshare you would like to test against.

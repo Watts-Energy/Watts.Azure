@@ -27,6 +27,7 @@
                     Format = new TextFormat()
                     {
                         FirstRowAsHeader = true,
+                        ColumnDelimiter = "\t",
                     }
                 };
             }

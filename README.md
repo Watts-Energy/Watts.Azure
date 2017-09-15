@@ -328,7 +328,7 @@ Implementing this environment requires you to find the following information:
 5. Create a data factory in your subscription and get the **Resource group name** of the resource group it resides in.
 6. Get the name and key of a storage account to be used along with the data factory. This can be found through the portal by browsing to the storage account and selecting "Keys".
 
-### Application client id / client secret
+### Application client id and client secret
 To run a data factory you will need to register an app with your Azure Active Directory. 
 
 The app doesn't do anything, except provide you with credentials to authenticate against Azure AD. Read more here:
@@ -396,7 +396,7 @@ Specifically, it needs an instance of *IAzureActiveDirectoryAuthentication*, whi
 - Application client id
 - Application client secret
 
-See the section [**Application client id / client secret**](#application-client-id-/-client-secret) for an explanation of how to obtain the client id.
+See the section [**Application client id and client secret**](#application-client-id-and-client-secret) for an explanation of how to obtain the client id.
 
 **IMPORTANT NOTE** 
 To communicate with Azure Data Lake Store you will need to give the application you're using to authenticate against it access to the data store (The app registration whose clientid/secret you've specified above).
@@ -440,7 +440,7 @@ Both the **DataCopyEnvironment** and **DataLakeEnvironment** have the above sett
 The settings are replicated, because it is not given that your Data lake store and Data factory share these settings. 
 Your Data lake store could even be in a different subscription than your Fata factory.
 
-The details of how to obtain the keys/secrets etc. are explained in the next section:
+The details of how to obtain the keys/secrets etc. are explained in section [Application client id and client secret](#application-client-id-and-client-secret)
 
 In addition to the above there's a single test of using Azure File Share to upload/download data. To execute that you need to fill in 
 - FileshareConnectionString

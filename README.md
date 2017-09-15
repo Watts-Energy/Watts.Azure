@@ -7,7 +7,7 @@ having to know all the details and coding everything yourself. In addition, it c
 Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
 code things from scratch and using the Azure Batch .NET API. It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
 
-It also makes it easy to set up backup in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
+It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
 
 Watts.Azure has a lot of utilities, but is not everything we want it to be. Yet!
 Be sure to check out the Issues section and feel free to add feature suggestions.
@@ -289,7 +289,32 @@ The machines offered in Azure do not come with R pre-installed so you must do on
   * **LINUX** You don't need to do anything really. Watts.Azure will run *apt-get install -y r-base* on the node before 
   executing your script. You can, however, not currently select the version of R you want to run when running in Linux.
 
+  **Install R-packages in your R-script running in Azure Batch**
+  In order to install packages when running R through Watts.Azure, you must let R know where packages are to be placed.
+  Similarly, when using them you must let R know where to load them from.
+  The following code snippet shows how it can be done.
 
+  ```r
+# Set the repository to get packages from
+repository <- "https://cloud.r-project.org/"
+
+# Set the local folder (relative to the current working directory) to download packages to
+localPackagesFolderName <- "rpackages"
+
+# List the packages you want to install
+list.of.packages <- c("digest", "zoo")
+
+# Get a list of packages that are not currently installed
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[, "Package"])]
+if (length(new.packages)) install.packages(new.packages, repos = repository, lib = localPackagesFolderName)
+
+# Tell R where to look for packages...
+.libPaths(localPackagesFolderName)
+
+# Import the packages
+require(digest, lib.loc = localPackagesFolderName)
+require(zoo, lib.loc = localPackagesFolderName)
+```
 
 # Azure Data Factory
 We currently support Copy Table -> Table and Table -> DataLake, through the fluent interface.

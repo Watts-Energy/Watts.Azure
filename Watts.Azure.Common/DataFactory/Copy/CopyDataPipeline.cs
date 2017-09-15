@@ -5,7 +5,6 @@ namespace Watts.Azure.Common.DataFactory.Copy
     using System.Threading;
     using General;
     using Interfaces.Security;
-    using Interfaces.Storage;
     using Watts.Azure.Common.Interfaces.DataFactory;
 
     /// <summary>
@@ -23,7 +22,6 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         private IAzureLinkedService sourceService;
         private IAzureLinkedService targetService;
-
 
         /// <summary>
         /// Instantiate a copy data pipeline to replicate data from one service to another.

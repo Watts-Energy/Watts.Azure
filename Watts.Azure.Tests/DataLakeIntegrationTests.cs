@@ -36,7 +36,7 @@
                 });
 
             // Create a data lake store with root /
-            this.dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, "", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+            this.dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
         }
 
         /// <summary>
@@ -55,9 +55,9 @@
             this.dataLake.CreateDirectory(directoryName).Wait();
 
             // ACT
-            dataLake.UploadFile(outFile, directoryName + "/" + outFile, true);
+            this.dataLake.UploadFile(outFile, directoryName + "/" + outFile, true);
 
-            var itemsInDirectory = dataLake.ListItems(directoryName);
+            var itemsInDirectory = this.dataLake.ListItems(directoryName);
 
             // ASSERT
             Assert.IsTrue(itemsInDirectory.Any(p => p.PathSuffix.Equals(outFile)));
@@ -76,8 +76,8 @@
         {
             // ARRANGE
             string directoryName = "/integrationtest_datalake_createdirectory";
-            AzureDataLakeStore dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, "", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
-            
+            AzureDataLakeStore dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+
             // Delete the directory if it exists...
             dataLake.DeleteDirectory(directoryName, true).Wait();
 
@@ -112,7 +112,7 @@
             this.dataLake.UploadFile(filepath, directoryName + "/" + filepath);
 
             // Assert that attempting to delete the directory with recursive:false while not empty throws an exception.
-            AssertHelper.Throws<Exception>(() => this.dataLake.DeleteDirectory(directoryName, recursive:false).Wait());
+            AssertHelper.Throws<Exception>(() => this.dataLake.DeleteDirectory(directoryName, recursive: false).Wait());
 
             // Assert that the directory was not deleted
             Assert.IsTrue(this.dataLake.PathExists(directoryName));
@@ -305,7 +305,7 @@
         [TestMethod]
         public void DataLake_ListDirectories()
         {
-            AssertHelper.DoesNotThrow<Exception>(() => dataLake.ListItems("/"));
+            AssertHelper.DoesNotThrow<Exception>(() => this.dataLake.ListItems("/"));
         }
     }
 }

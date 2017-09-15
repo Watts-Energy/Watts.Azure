@@ -1,6 +1,5 @@
 namespace Watts.Azure.Utils.Helpers.DataFactory
 {
-    using Common.Interfaces.Storage;
     using Watts.Azure.Common.Interfaces.DataFactory;
 
     public class DataCopyBuilderWithSource : DataCopyBuilderWithAuthentication

@@ -9,8 +9,6 @@ namespace Watts.Azure.Common.Interfaces.Storage
     /// </summary>
     public interface IAzureTableStorage : IAzureLinkedService
     {
-        //string TableName { get; }
-
         CloudTable GetTableReference();
 
         /// <summary>

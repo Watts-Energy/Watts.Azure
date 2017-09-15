@@ -8,7 +8,7 @@
 
     public class LinkedServiceHelper
     {
-        public Action<string> progressDelegate;
+        private Action<string> progressDelegate;
 
         public LinkedServiceHelper(Action<string> progressDelegate)
         {
@@ -17,12 +17,12 @@
 
         public void CreateTargetIfItDoesntExist(IAzureLinkedService sourceService, IAzureLinkedService targetService)
         {
-            if(sourceService is IAzureTableStorage && targetService is IAzureTableStorage)
+            if (sourceService is IAzureTableStorage && targetService is IAzureTableStorage)
             {
                 this.CreateTargetIfItDoesntExist(sourceService as IAzureTableStorage, targetService as IAzureTableStorage);
                 return;
             }
-            else if(sourceService is IAzureTableStorage && targetService is IAzureDataLakeStore)
+            else if (sourceService is IAzureTableStorage && targetService is IAzureDataLakeStore)
             {
                 IAzureDataLakeStore dataLake = targetService as IAzureDataLakeStore;
                 dataLake.CreateDirectory(string.Empty);
@@ -51,11 +51,11 @@
 
         public LinkedServiceTypeProperties GetLinkedServiceTypeProperties(IAzureLinkedService linkedService)
         {
-            if(linkedService is IAzureTableStorage)
+            if (linkedService is IAzureTableStorage)
             {
                 return new AzureStorageLinkedService(linkedService.ConnectionString);
             }
-            else if(linkedService is IAzureDataLakeStore)
+            else if (linkedService is IAzureDataLakeStore)
             {
                 IAzureDataLakeStore dataLake = linkedService as IAzureDataLakeStore;
 

@@ -123,11 +123,11 @@ namespace Watts.Azure.Common.Storage.Objects
 
                     powershellInstance.Invoke();
 
-                    if(powershellInstance.Streams.Error.Count > 0)
+                    if (powershellInstance.Streams.Error.Count > 0)
                     {
                         List<Exception> errors = new List<Exception>();
 
-                        foreach(var error in powershellInstance.Streams.Error)
+                        foreach (var error in powershellInstance.Streams.Error)
                         {
                             errors.Add(error.Exception);
                         }

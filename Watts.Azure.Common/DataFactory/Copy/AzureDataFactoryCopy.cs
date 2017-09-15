@@ -20,21 +20,17 @@ namespace Watts.Azure.Common.DataFactory.Copy
     /// </summary>
     public class AzureDataFactoryCopy
     {
-        private IAzureLinkedService sourceService;
-        private IAzureLinkedService targetService;
-
         private readonly AzureDatasetHelper datasetHelper;
         private readonly LinkedServiceHelper linkedServiceHelper;
-
         private readonly AzureDataFactorySetup factorySetup;
-        private CopySource source;
-        private CopySink sink;
-
         private readonly IAzureActiveDirectoryAuthentication authentication;
-
         private readonly CopySetup copySetup;
         private readonly Action<string> progressDelegate;
 
+        private IAzureLinkedService sourceService;
+        private IAzureLinkedService targetService;
+        private CopySource source;
+        private CopySink sink;
         private int authenticationRetries = 0;
 
         public AzureDataFactoryCopy(AzureDataFactorySetup factorySetup, CopySetup copySetup, IAzureActiveDirectoryAuthentication authentication, Action<string> progressDelegate = null)
@@ -57,11 +53,11 @@ namespace Watts.Azure.Common.DataFactory.Copy
             {
                 return this.sourceService;
             }
+
             set
             {
                 this.sourceService = value;
                 this.source = this.datasetHelper.GetCopySource(this.sourceService);
-
             }
         }
 
@@ -71,13 +67,13 @@ namespace Watts.Azure.Common.DataFactory.Copy
             {
                 return this.targetService;
             }
+
             set
             {
                 this.targetService = value;
                 this.sink = this.datasetHelper.GetCopySink(this.targetService);
             }
         }
-
 
         public DataFactoryManagementClient Client { get; private set; }
 
@@ -94,7 +90,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// <summary>
         /// Link a service to the copy (e.g. the source or the sink)
         /// </summary>
-        /// <param name="connectionString"></param>
+        /// <param name="service"></param>
         /// <param name="linkedServiceName"></param>
         /// <returns></returns>
         public bool LinkService(IAzureLinkedService service, string linkedServiceName)

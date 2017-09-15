@@ -63,7 +63,6 @@
         {
             FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1 };
 
-            // Here we find the Andersen family via its LastName
             var retVal = this.documentClient.CreateDocumentQuery<T>(query, queryOptions).ToList();
 
             return retVal;

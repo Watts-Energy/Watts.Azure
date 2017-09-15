@@ -86,6 +86,5 @@
                 ((AzureTableSource)source).AzureTableSourceQuery = query;
             }
         }
-
     }
 }

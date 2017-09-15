@@ -1,5 +1,3 @@
-using Watts.Azure.Common.Interfaces.DataFactory;
-
 namespace Watts.Azure.Common.DataFactory.Copy
 {
     /// <summary>
@@ -8,7 +6,6 @@ namespace Watts.Azure.Common.DataFactory.Copy
     public class CopySetup
     {
         public string CopyPipelineName { get; set; }
-
 
         /// <summary>
         /// The name that should be given to the source data set (you pick one).
@@ -38,7 +35,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         /// <summary>
         /// A boolean indicating whether the target data store should be created if it doesn't exist.
-        /// What this means depends on the type of target service. If Table Storage the table is created, if DataLake, 
+        /// What this means depends on the type of target service. If Table Storage the table is created, if DataLake,
         /// the directory that the data lake store points to is created.
         /// </summary>
         public bool CreateTargetIfNotExists { get; set; } = false;

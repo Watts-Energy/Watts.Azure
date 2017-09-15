@@ -1,17 +1,16 @@
 ﻿namespace Watts.Azure.Tests
 {
     using System;
+    using System.Diagnostics;
     using System.IO;
     using System.Threading;
-    using System.Linq;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Watts.Azure.Common.DataFactory.Copy;
     using Watts.Azure.Common.Security;
     using Watts.Azure.Common.Storage.Objects;
     using Watts.Azure.Tests.Objects;
     using Watts.Azure.Utils.Build;
     using Watts.Azure.Utils.Objects;
-    using Watts.Azure.Common.DataFactory.Copy;
-    using System.Diagnostics;
 
     [TestClass]
     public class DataFactoryIntegrationTests
@@ -111,7 +110,7 @@
                 Thread.Sleep(60000);
             }
 
-             int numberOfEntities = 10;
+            int numberOfEntities = 10;
 
             sourceTable.Insert(TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()));
 

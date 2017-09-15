@@ -37,7 +37,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <param name="dependencyResolver">Dependency resolver to use when finding dependencies of the batch task assembly</param>
         /// <param name="cloudAccountFactory">Provides cloud accounts in a mockable way</param>
         /// <param name="log">A log to place debug and error message in (can be null)</param>
-        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, IDependencyResolver dependencyResolver, ICloudAccountFactory cloudAccountFactory, ILog log) 
+        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, IDependencyResolver dependencyResolver, ICloudAccountFactory cloudAccountFactory, ILog log)
             : this(account, settings, prepareInputFiles, new List<IDependencyResolver>() { dependencyResolver }, cloudAccountFactory, log)
         {
         }

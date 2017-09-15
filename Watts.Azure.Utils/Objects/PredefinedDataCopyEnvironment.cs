@@ -40,7 +40,6 @@
         /// </summary>
         public string ActiveDirectoryTenantId { get; set; }
 
-
         /// <summary>
         /// Name and key of the storage account to perform the tests in.
         /// </summary>

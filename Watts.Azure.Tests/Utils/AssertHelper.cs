@@ -19,7 +19,6 @@
             }
             catch (Exception ex)
             {
-
                 if (ex is ExceptionType || ex.InnerException is ExceptionType)
                 {
                     exceptionThrown = true;

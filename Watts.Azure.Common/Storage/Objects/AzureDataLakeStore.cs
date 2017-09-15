@@ -9,7 +9,6 @@
     using System.Threading.Tasks;
     using Microsoft.Azure.Management.DataLake.Store;
     using Microsoft.Azure.Management.DataLake.Store.Models;
-    using Watts.Azure.Common.Interfaces.DataFactory;
     using Watts.Azure.Common.Interfaces.Security;
     using Watts.Azure.Common.Interfaces.Storage;
 
@@ -60,7 +59,7 @@
         public string ConnectionString { get; }
 
         /// <summary>
-        /// Has no meaning in AzureDataLakeStore.cs but must be implemenented as IAzureLinkedService. 
+        /// Has no meaning in AzureDataLakeStore.cs but must be implemenented as IAzureLinkedService.
         /// TODO find a way to handle this so that not all IAzureLinkedService's must implement it...
         /// </summary>
         /// <param name="partitionKeyType"></param>
@@ -78,13 +77,13 @@
         /// <returns></returns>
         public async Task CreateDirectory(string relativePath)
         {
-            string path = string.Join("", this.Directory, relativePath);
+            string path = string.Join(string.Empty, this.Directory, relativePath);
 
             await this.fileSystemClient.FileSystem.MkdirsAsync(this.Name, path);
         }
 
         /// <summary>
-        /// Delete the directory at the given path (relative to this.Directory), if it exists. 
+        /// Delete the directory at the given path (relative to this.Directory), if it exists.
         /// If recursive = false and the folder is not empty, an exception is thrown.
         /// </summary>
         /// <param name="relativePath"></param>
@@ -92,12 +91,12 @@
         /// <returns></returns>
         public async Task DeleteDirectory(string relativePath = "", bool recursive = false)
         {
-            string path = string.Join("", this.Directory, relativePath);
+            string path = string.Join(string.Empty, this.Directory, relativePath);
 
             if (this.PathExists(path))
             {
                 // If it is not a directory, throw an exception.
-                if(this.GetItemInfo(path).Type != FileType.DIRECTORY)
+                if (this.GetItemInfo(path).Type != FileType.DIRECTORY)
                 {
                     throw new ArgumentException($"{path} is not a directory. Please use DeleteFile instead");
                 }
@@ -146,7 +145,7 @@
         /// <param name="force">If true, overwrites the file if it exists. If false, throws an exception.</param>
         public void UploadFile(string localSourceFilePath, string destinationRelativeFilePath, bool force = true)
         {
-            this.fileSystemClient.FileSystem.UploadFile(this.Name,   localSourceFilePath, string.Join("/", this.Directory, destinationRelativeFilePath), overwrite: force);
+            this.fileSystemClient.FileSystem.UploadFile(this.Name, localSourceFilePath, string.Join("/", this.Directory, destinationRelativeFilePath), overwrite: force);
         }
 
         /// <summary>
@@ -196,7 +195,7 @@
         }
 
         /// <summary>
-        /// Download a file from the Data lake store to a local file. 
+        /// Download a file from the Data lake store to a local file.
         /// </summary>
         /// <param name="srcFilePath"></param>
         /// <param name="destFilePath"></param>

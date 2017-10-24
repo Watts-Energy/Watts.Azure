@@ -6,7 +6,7 @@ namespace Watts.Azure.Utils.Interfaces.Batch
     /// <summary>
     /// Interface for a predefined environment where batch account and storage account settings have been specified.
     /// </summary>
-    public interface IPredefinedBatchEnvironment
+    public interface IBatchEnvironment
     {
         BatchAccountSettings BatchAccountSettings { get; set; }
 

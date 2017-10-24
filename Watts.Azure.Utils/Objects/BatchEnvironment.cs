@@ -8,7 +8,7 @@ namespace Watts.Azure.Utils.Objects
     /// <summary>
     /// Base class for predefined batch environments.
     /// </summary>
-    public class PredefinedBatchEnvironment : IPredefinedBatchEnvironment
+    public class BatchEnvironment : IBatchEnvironment
     {
         public BatchAccountSettings BatchAccountSettings { get; set; }
 

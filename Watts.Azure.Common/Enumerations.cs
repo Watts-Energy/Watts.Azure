@@ -21,4 +21,39 @@
         Linux,
         Windows
     }
+
+    public enum AzureLocation
+    {
+        WestUs,
+        WestUs2,
+        WestCentralUs,
+        SouthCentralUs,
+        NorthCentralUs,
+        EastUs,
+        EastUs2,
+        BrazilSouth,
+        UkSouth,
+        UkWest,
+        NorthEurope,
+        FranceCentral,
+        FranceSouth,
+        WestEurope,
+        GermanyNorthEast,
+        GermanyCentral,
+        WestIndia,
+        CentralIndia,
+        SouthIndia,
+        ChinaNorth,
+        ChinaEast,
+        EastAsia,
+        SouthEastAsia,
+        KoreaCentral,
+        KoreaSouth,
+        JapanEast,
+        JapanWest,
+        AustraliaEast,
+        AustraliaCentral,
+        AustraliaCentral2,
+        AustraliaSouthEast
+    }
 }

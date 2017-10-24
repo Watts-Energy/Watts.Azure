@@ -16,7 +16,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// The batch environment
         /// </summary>
-        private IPredefinedBatchEnvironment environment;
+        private IBatchEnvironment environment;
 
         /// <summary>
         /// Setup the test by creating the environment.
@@ -39,7 +39,7 @@ namespace Watts.Azure.Tests
         public void GetUbuntuBox_FindsImage()
         {
             // ARRANGE
-            var credentials = BatchBuilder.InPredefinedEnvironment(this.environment).Credentials;
+            var credentials = BatchBuilder.InEnvironment(this.environment).Credentials;
 
             AzureBatchClient client = new AzureBatchClient(credentials);
 
@@ -58,7 +58,7 @@ namespace Watts.Azure.Tests
         public void GetDebian8Box_FindsImage()
         {
             // ARRANGE
-            var credentials = BatchBuilder.InPredefinedEnvironment(this.environment).Credentials;
+            var credentials = BatchBuilder.InEnvironment(this.environment).Credentials;
 
             AzureBatchClient client = new AzureBatchClient(credentials);
 

@@ -13,7 +13,7 @@ namespace Watts.Azure.Tests
     [TestClass]
     public class AzureStorageIntegrationTests
     {
-        private IPredefinedBatchEnvironment environment;
+        private IBatchEnvironment environment;
         private AzureBlobStorage blobStorageUnderTest;
 
         private TestEnvironmentConfig config;

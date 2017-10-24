@@ -13,7 +13,7 @@
     [TestClass]
     public class DataLakeIntegrationTests
     {
-        private PredefinedDataLakeStoreEnvironment dataLakeEnvironment;
+        private DataLakeStoreEnvironment dataLakeEnvironment;
         private AzureActiveDirectoryAuthentication dataLakeAuthentication;
         private AzureDataLakeStore dataLake;
 
@@ -28,12 +28,7 @@
             this.dataLakeAuthentication = new AzureActiveDirectoryAuthentication(
                 this.dataLakeEnvironment.SubscriptionId,
                 this.dataLakeEnvironment.ResourceGroupName,
-                new AppActiveDirectoryAuthenticationCredentials()
-                {
-                    ClientId = this.dataLakeEnvironment.AdfClientId,
-                    ClientSecret = this.dataLakeEnvironment.ClientSecret,
-                    TenantId = this.dataLakeEnvironment.ActiveDirectoryTenantId
-                });
+                this.dataLakeEnvironment.Credentials);
 
             // Create a data lake store with root /
             this.dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);

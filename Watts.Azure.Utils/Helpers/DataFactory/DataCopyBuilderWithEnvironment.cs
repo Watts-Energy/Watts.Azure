@@ -5,12 +5,12 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
     public class DataCopyBuilderWithEnvironment
     {
-        public DataCopyBuilderWithEnvironment(IPredefinedDataCopyEnvironment environment)
+        public DataCopyBuilderWithEnvironment(IDataCopyEnvironment environment)
         {
             this.Environment = environment;
         }
 
-        public IPredefinedDataCopyEnvironment Environment { get; set; }
+        public IDataCopyEnvironment Environment { get; set; }
 
         public DataCopyBuilderWithDataFactorySetup UsingDataFactorySetup(AzureDataFactorySetup dataFactorySetup)
         {

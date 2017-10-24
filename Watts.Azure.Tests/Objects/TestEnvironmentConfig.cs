@@ -7,11 +7,13 @@
 
     public class TestEnvironmentConfig
     {
-        public PredefinedBatchEnvironment BatchEnvironment { get; set; }
+        public BatchEnvironment BatchEnvironment { get; set; }
 
-        public PredefinedDataCopyEnvironment DataCopyEnvironment { get; set; }
+        public DataCopyEnvironment DataCopyEnvironment { get; set; }
 
-        public PredefinedDataLakeStoreEnvironment DataLakeEnvironment { get; set; }
+        public DataLakeStoreEnvironment DataLakeEnvironment { get; set; }
+
+        public AzureServiceBusEnvironment ServiceBusEnvironment { get; set; }
 
         public string FileshareConnnectionString { get; set; }
 

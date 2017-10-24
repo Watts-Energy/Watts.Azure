@@ -7,7 +7,7 @@ namespace Watts.Azure.Utils.Build
 
     public class BatchBuilder
     {
-        public IPredefinedBatchEnvironment PredefinedEnvironment { get; set; }
+        public IBatchEnvironment PredefinedEnvironment { get; set; }
 
         /// <summary>
         /// Specify batch account settings when executing the batch.
@@ -24,8 +24,8 @@ namespace Watts.Azure.Utils.Build
         /// </summary>
         /// <param name="environment"></param>
         /// <returns></returns>
-        public static IBatchCreationWithBatchAndStorageAccountSettings InPredefinedEnvironment(
-            IPredefinedBatchEnvironment environment)
+        public static IBatchCreationWithBatchAndStorageAccountSettings InEnvironment(
+            IBatchEnvironment environment)
         {
             if (!environment.IsValid())
             {

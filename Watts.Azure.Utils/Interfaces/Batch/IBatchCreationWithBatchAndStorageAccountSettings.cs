@@ -6,7 +6,7 @@
 
     public interface IBatchCreationWithBatchAndStorageAccountSettings : IBatchCreationWithAccountInfo
     {
-        IPredefinedBatchEnvironment PredefinedEnvironment { get; set; }
+        IBatchEnvironment PredefinedEnvironment { get; set; }
 
         IBatchCreationWithBatchAndStorageAccountSettings RunStartupCommandOnAllNodes(BatchConsoleCommand command);
 

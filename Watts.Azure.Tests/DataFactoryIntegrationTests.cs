@@ -15,8 +15,8 @@
     [TestClass]
     public class DataFactoryIntegrationTests
     {
-        private PredefinedDataCopyEnvironment environment;
-        private PredefinedDataLakeStoreEnvironment dataLakeEnvironment;
+        private DataCopyEnvironment environment;
+        private DataLakeStoreEnvironment dataLakeEnvironment;
         private AzureActiveDirectoryAuthentication dataFactoryAuthentication;
         private AzureActiveDirectoryAuthentication dataLakeAuthentication;
 
@@ -30,22 +30,12 @@
             this.dataFactoryAuthentication = new AzureActiveDirectoryAuthentication(
                 this.environment.SubscriptionId,
                 string.Empty,
-                new AppActiveDirectoryAuthenticationCredentials()
-                {
-                    ClientId = this.environment.AdfClientId,
-                    ClientSecret = this.environment.ClientSecret,
-                    TenantId = this.environment.ActiveDirectoryTenantId
-                });
+                this.environment.Credentials);
 
             this.dataLakeAuthentication = new AzureActiveDirectoryAuthentication(
                 this.dataLakeEnvironment.SubscriptionId,
                 this.dataLakeEnvironment.ResourceGroupName,
-                new AppActiveDirectoryAuthenticationCredentials()
-                {
-                    ClientId = this.dataLakeEnvironment.AdfClientId,
-                    ClientSecret = this.dataLakeEnvironment.ClientSecret,
-                    TenantId = this.dataLakeEnvironment.ActiveDirectoryTenantId
-                });
+                this.dataLakeEnvironment.Credentials);
         }
 
         [TestCategory("IntegrationTest"), TestCategory("DataFactory")]

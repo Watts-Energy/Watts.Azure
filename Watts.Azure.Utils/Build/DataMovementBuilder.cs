@@ -5,7 +5,7 @@ namespace Watts.Azure.Utils.Build
 
     public class DataCopyBuilder
     {
-        public static DataCopyBuilderWithEnvironment InDataFactoryEnvironment(IPredefinedDataCopyEnvironment environment)
+        public static DataCopyBuilderWithEnvironment InDataFactoryEnvironment(IDataCopyEnvironment environment)
         {
             return new DataCopyBuilderWithEnvironment(environment);
         }

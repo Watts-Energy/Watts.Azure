@@ -4,7 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Text;
+    using Microsoft.ServiceBus.Messaging;
 
     public static class Extensions
     {
@@ -104,6 +106,21 @@
         public static string ToIso8601(this DateTimeOffset dateTime)
         {
             return dateTime.ToString("s");
+        }
+
+        public static BrokeredMessage ToBrokeredMessage(this object obj)
+        {
+            BrokeredMessage message = new BrokeredMessage(obj);
+
+            foreach (PropertyInfo prop in obj.GetType().GetProperties())
+            {
+                string name = prop.Name;
+                string value = prop.GetValue(obj).ToString();
+
+                message.Properties.Add(name, value);
+            }
+
+            return message;
         }
     }
 }

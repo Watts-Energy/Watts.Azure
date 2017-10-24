@@ -1,6 +1,8 @@
 ﻿namespace Watts.Azure.Tests.Objects
 {
     using System.IO;
+    using Common;
+    using Common.Security;
     using Newtonsoft.Json;
     using Watts.Azure.Common.Batch.Objects;
     using Watts.Azure.Common.Storage.Objects;
@@ -12,7 +14,7 @@
     /// </summary>
     public class TestEnvironmentConfigHandler
     {
-        private string filePath;
+        private readonly string filePath;
 
         public TestEnvironmentConfigHandler(string filepath)
         {
@@ -21,7 +23,7 @@
 
         public static TestEnvironmentConfig DefaultEnvironment => new TestEnvironmentConfig()
         {
-            BatchEnvironment = new PredefinedBatchEnvironment()
+            BatchEnvironment = new BatchEnvironment()
             {
                 BatchAccountSettings = new BatchAccountSettings()
                 {
@@ -38,12 +40,15 @@
 
             FileshareConnnectionString = "fileshare connection string",
 
-            DataCopyEnvironment = new PredefinedDataCopyEnvironment()
+            DataCopyEnvironment = new DataCopyEnvironment()
             {
                 SubscriptionId = "Subscription id",
-                ActiveDirectoryTenantId = "Ad tenant id",
-                AdfClientId = "Application client id",
-                ClientSecret = "Application client secret",
+                Credentials = new AppActiveDirectoryAuthenticationCredentials()
+                {
+                    ClientId = "Application client id",
+                    ClientSecret = "Application client secret",
+                    TenantId = "Ad tenant id"
+                },
                 StorageAccountSettings = new StorageAccountSettings()
                 {
                     StorageAccountName = "storage account name",
@@ -51,14 +56,30 @@
                 }
             },
 
-            DataLakeEnvironment = new PredefinedDataLakeStoreEnvironment()
+            DataLakeEnvironment = new DataLakeStoreEnvironment()
             {
                 SubscriptionId = "Subscription id",
                 ResourceGroupName = "Resource group name",
-                ActiveDirectoryTenantId = "Ad tenant id",
-                AdfClientId = "Application client id",
-                ClientSecret = "Application client secret",
+                Credentials = new AppActiveDirectoryAuthenticationCredentials()
+                {
+                    ClientId = "Application client id",
+                    ClientSecret = "Application client secret",
+                    TenantId = "Ad tenant id"
+                },
                 DataLakeStoreName = "Data lake store name"
+            },
+            
+            ServiceBusEnvironment = new AzureServiceBusEnvironment()
+            {
+                NamespaceName = "Service bus namespace",
+                ResourceGroupName = "Resource group name",
+                Location = AzureLocation.NorthEurope,
+                Credentials = new AppActiveDirectoryAuthenticationCredentials()
+                {
+                    ClientId = "Application client id",
+                    ClientSecret = "Application client secret",
+                    TenantId = "Ad tenant id"
+                }
             }
         };
 

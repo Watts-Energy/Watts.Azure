@@ -18,7 +18,7 @@
     [TestClass]
     public class ExecuteBatchManualTests
     {
-        private IPredefinedBatchEnvironment environment;
+        private IBatchEnvironment environment;
 
         /// <summary>
         /// Setup the test by creating the environment.
@@ -39,7 +39,7 @@
         public void GetLinuxBoxById_FindsImage()
         {
             // ARRANGE
-            var credentials = BatchBuilder.InPredefinedEnvironment(this.environment).Credentials;
+            var credentials = BatchBuilder.InEnvironment(this.environment).Credentials;
 
             AzureBatchClient client = new AzureBatchClient(credentials);
 
@@ -68,7 +68,7 @@
             };
 
             var builder = BatchBuilder
-                .InPredefinedEnvironment(this.environment)
+                .InEnvironment(this.environment)
                 .ResolveDependenciesUsing(DependencyResolver.UsingFunction(() => new string[] { }))
                 .WithPoolSetup(new BatchPoolSetup()
                 {
@@ -111,7 +111,7 @@
         {
             // ARRANGE
             var builder = BatchBuilder
-                .InPredefinedEnvironment(this.environment)
+                .InEnvironment(this.environment)
                 .ResolveDependenciesUsing(DependencyResolver.UsingFunction(() => new string[] { }))
                 .WithPoolSetup(new BatchPoolSetup()
                 {
@@ -159,7 +159,7 @@
             outputStorage.DeleteContainerIfExists();
 
             var builder = BatchBuilder
-                .InPredefinedEnvironment(this.environment)
+                .InEnvironment(this.environment)
                 .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
                 .WithPoolSetup(new BatchPoolSetup()
                 {
@@ -221,7 +221,7 @@
 
             // Create the builder with a specific job and pool id.
             var builder = BatchBuilder
-                .InPredefinedEnvironment(this.environment)
+                .InEnvironment(this.environment)
                 .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
                 .WithPoolSetup(new BatchPoolSetup() { JobId = "HybridBatchTestJob", PoolId = "HybridBatchTestPool" });
 

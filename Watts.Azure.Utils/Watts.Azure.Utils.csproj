@@ -135,12 +135,13 @@
     <Compile Include="Interfaces\Batch\IBatchCreationWithInputPreparation.cs" />
     <Compile Include="Interfaces\Batch\IBatchCreationWithPoolSetup.cs" />
     <Compile Include="Interfaces\Batch\IBatchExecution.cs" />
-    <Compile Include="Interfaces\Batch\IPredefinedBatchEnvironment.cs" />
+    <Compile Include="Interfaces\Batch\IBatchEnvironment.cs" />
     <Compile Include="Interfaces\DataFactory\IDataFactoryEnvironment.cs" />
-    <Compile Include="Interfaces\DataFactory\IPredefinedDataCopyEnvironment.cs" />
-    <Compile Include="Objects\PredefinedBatchEnvironment.cs" />
-    <Compile Include="Objects\PredefinedDataCopyEnvironment.cs" />
-    <Compile Include="Objects\PredefinedDataLakeStoreEnvironment.cs" />
+    <Compile Include="Interfaces\DataFactory\IDataCopyEnvironment.cs" />
+    <Compile Include="Objects\AzureServiceBusEnvironment.cs" />
+    <Compile Include="Objects\BatchEnvironment.cs" />
+    <Compile Include="Objects\DataCopyEnvironment.cs" />
+    <Compile Include="Objects\DataLakeStoreEnvironment.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

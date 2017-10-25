@@ -78,7 +78,7 @@ namespace Watts.Azure.Tests
 
             // ASSERT
             string localFileCopyName = "TestUploadFile_Downloaded.txt";
-            if(File.Exists(localFileCopyName)) {  File.Delete(localFileCopyName); }
+            if (File.Exists(localFileCopyName)) { File.Delete(localFileCopyName); }
 
             share.DownloadFile(filename, localFileCopyName);
 

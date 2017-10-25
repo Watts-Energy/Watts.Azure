@@ -68,7 +68,7 @@
                 },
                 DataLakeStoreName = "Data lake store name"
             },
-            
+
             ServiceBusEnvironment = new AzureServiceBusEnvironment()
             {
                 NamespaceName = "Service bus namespace",

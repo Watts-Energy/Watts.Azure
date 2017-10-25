@@ -3,10 +3,8 @@
     using System;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using Interfaces.General;
     using Interfaces.ServiceBus;
     using Interfaces.Wrappers;
-    using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
     public class AzureServiceBusTopic : ITopicBus
@@ -54,7 +52,7 @@
         }
 
         /// <summary>
-        /// Initializing the topic ensures that 
+        /// Initializing the topic ensures that
         /// a) The topic exists
         /// b) if recreateSubscription is true, that it exists
         /// </summary>

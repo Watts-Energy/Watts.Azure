@@ -216,9 +216,7 @@
     <Compile Include="Storage\Objects\Wrappers\PoolOperationsWrapper.cs" />
     <Compile Include="Storage\Objects\Wrappers\StorageAccount.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Interfaces\Factory\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />

@@ -83,7 +83,7 @@
 
         public IEnumerable<T> Flatten()
         {
-            return new[] {this.Value }.Union(this.children.SelectMany(x => x.Flatten()));
+            return new[] { this.Value }.Union(this.children.SelectMany(x => x.Flatten()));
         }
     }
 }

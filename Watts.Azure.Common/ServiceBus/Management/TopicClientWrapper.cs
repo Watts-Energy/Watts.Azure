@@ -1,7 +1,6 @@
 ﻿namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System.Threading.Tasks;
-    using Interfaces.ServiceBus;
     using Interfaces.Wrappers;
     using Microsoft.ServiceBus.Messaging;
 

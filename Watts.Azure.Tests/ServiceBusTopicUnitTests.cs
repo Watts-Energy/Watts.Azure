@@ -1,10 +1,8 @@
 ﻿namespace Watts.Azure.Tests
 {
-    using System;
-    using Common.Interfaces.ServiceBus;
     using Common.Interfaces.Wrappers;
-    using FluentAssertions;
     using Common.ServiceBus.Objects;
+    using FluentAssertions;
     using Microsoft.ServiceBus.Messaging;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;

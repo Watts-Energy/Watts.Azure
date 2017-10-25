@@ -3,7 +3,6 @@
     using System;
     using System.Linq;
     using General;
-    using Interfaces.Security;
     using Interfaces.ServiceBus;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
@@ -12,7 +11,7 @@
     /// <summary>
     /// This class represents a certain topology in Azure Service Bus. It can create auto-forwarding topics etc in a tree-structure that allows
     /// for scaling beyond the 2000 subscriptions per topic currently imposed in Azure Service Bus.
-    /// It is possible to specify the maximum number of subscribers that should be allowed. At the time of writing, the hard limit in Azure is 2000 subscriptions per topic, 
+    /// It is possible to specify the maximum number of subscribers that should be allowed. At the time of writing, the hard limit in Azure is 2000 subscriptions per topic,
     /// but this could change in the future so no hard limit is enforced here.
     /// </summary>
     public class AzureServiceBusTopology
@@ -79,8 +78,8 @@
         /// </summary>
         /// <param name="rootNamespace">The root service bus namespace name</param>
         /// <param name="topicName">The name of the topic to scale</param>
-        /// <param name="authenticator">Authenticator for Azure AD</param>
-        /// <param name="location">Location to create the bus</param>
+        /// <param name="serviceBusManagement">Management client for Azure Service Bus</param>
+        /// <param name="location">Location to create the bus in</param>
         /// <param name="maxSubscribersPerTopic">(optional) The maximum number of subscribers to allow per topic.</param>
         public AzureServiceBusTopology(string rootNamespace, string topicName, IAzureServiceBusManagement serviceBusManagement, AzureLocation location, int maxSubscribersPerTopic = 2000)
         {

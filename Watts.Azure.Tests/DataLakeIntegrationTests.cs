@@ -10,7 +10,6 @@
     using Watts.Azure.Common.Security;
     using Watts.Azure.Common.Storage.Objects;
     using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Tests.Utils;
     using Watts.Azure.Utils.Objects;
 
     [TestClass]
@@ -215,7 +214,7 @@
             // ARRANGE
             string directoryname = "integrationtest_deletedirectoryonfile";
             this.dataLake.CreateDirectory(directoryname).Wait();
-            string localFilePath = Guid.NewGuid().ToString() + ".txt";
+            string localFilePath = Guid.NewGuid() + ".txt";
             File.WriteAllText(localFilePath, "testing");
             string dataLakeFilePath = directoryname + "/" + localFilePath;
 

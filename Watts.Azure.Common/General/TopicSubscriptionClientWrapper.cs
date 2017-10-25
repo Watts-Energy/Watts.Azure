@@ -1,7 +1,6 @@
 ﻿namespace Watts.Azure.Common.General
 {
     using System;
-    using Interfaces.ServiceBus;
     using Interfaces.Wrappers;
     using Microsoft.ServiceBus.Messaging;
 

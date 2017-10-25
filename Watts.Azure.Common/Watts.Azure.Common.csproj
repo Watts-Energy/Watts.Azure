@@ -161,16 +161,18 @@
     <Compile Include="General\NetFrameworkDependencies.cs" />
     <Compile Include="General\PrepareInputFiles.cs" />
     <Compile Include="General\Retry.cs" />
+    <Compile Include="General\TopicSubscriptionClientWrapper.cs" />
     <Compile Include="General\TreeNode.cs" />
     <Compile Include="Interfaces\Batch\IBatchAccount.cs" />
     <Compile Include="Interfaces\Batch\IBatchExecutionSettings.cs" />
     <Compile Include="Interfaces\DataFactory\IAzureLinkedService.cs" />
     <Compile Include="Interfaces\General\ICloudAccountFactory.cs" />
-    <Compile Include="Interfaces\General\IDependencyResolver.cs" />
+    <Compile Include="Interfaces\General\IBatchDependencyResolver.cs" />
     <Compile Include="Interfaces\General\ILog.cs" />
-    <Compile Include="Interfaces\General\IManualDependencyResolver.cs" />
+    <Compile Include="Interfaces\General\IManualBatchDependencyResolver.cs" />
     <Compile Include="Interfaces\General\IPrepareInputFiles.cs" />
-    <Compile Include="Interfaces\General\ITopicBus.cs" />
+    <Compile Include="Interfaces\ServiceBus\IAzureServiceBusManagement.cs" />
+    <Compile Include="Interfaces\ServiceBus\ITopicBus.cs" />
     <Compile Include="Interfaces\Security\IAzureActiveDirectoryAuthentication.cs" />
     <Compile Include="Interfaces\Storage\IAzureBlobStorage.cs" />
     <Compile Include="Interfaces\Storage\IAzureDataLakeStore.cs" />
@@ -179,16 +181,21 @@
     <Compile Include="Interfaces\Wrappers\IAzureBatchClient.cs" />
     <Compile Include="Interfaces\Wrappers\IAzureBlobClient.cs" />
     <Compile Include="Interfaces\Wrappers\IJobOperations.cs" />
+    <Compile Include="Interfaces\Wrappers\INamespaceManager.cs" />
     <Compile Include="Interfaces\Wrappers\IPoolOperations.cs" />
     <Compile Include="Interfaces\Wrappers\IStorageAccount.cs" />
+    <Compile Include="Interfaces\Wrappers\ITopicClient.cs" />
+    <Compile Include="Interfaces\Wrappers\ITopicSubscriptionClient.cs" />
+    <Compile Include="ServiceBus\Management\NamespaceManagerWrapper.cs" />
+    <Compile Include="ServiceBus\Management\TopicClientWrapper.cs" />
     <Compile Include="PredefinedMachine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Security\AppActiveDirectoryAuthenticationCredentials.cs" />
     <Compile Include="Security\AzureActiveDirectoryAuthentication.cs" />
-    <Compile Include="ServiceBus\Objects\AzureServiceBusManagement.cs" />
+    <Compile Include="ServiceBus\Management\AzureServiceBusManagement.cs" />
     <Compile Include="ServiceBus\Objects\AzureServiceBusTopic.cs" />
     <Compile Include="ServiceBus\Objects\AzureServiceBusTopicInfo.cs" />
-    <Compile Include="ServiceBus\Objects\AzureServiceBusTopology.cs" />
+    <Compile Include="ServiceBus\Management\AzureServiceBusTopology.cs" />
     <Compile Include="Storage\Objects\AzureBlobStorage.cs" />
     <Compile Include="Storage\Objects\AzureDataLakeStore.cs" />
     <Compile Include="Storage\Objects\AzureDocumentDb.cs" />
@@ -209,7 +216,9 @@
     <Compile Include="Storage\Objects\Wrappers\PoolOperationsWrapper.cs" />
     <Compile Include="Storage\Objects\Wrappers\StorageAccount.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Interfaces\Factory\" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />

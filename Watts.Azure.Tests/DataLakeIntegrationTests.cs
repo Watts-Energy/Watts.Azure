@@ -1,8 +1,11 @@
 ﻿namespace Watts.Azure.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using FluentAssertions;
+    using Microsoft.Azure.Management.DataLake.Store.Models;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Watts.Azure.Common.Security;
     using Watts.Azure.Common.Storage.Objects;
@@ -52,10 +55,11 @@
             // ACT
             this.dataLake.UploadFile(outFile, directoryName + "/" + outFile, true);
 
-            var itemsInDirectory = this.dataLake.ListItems(directoryName);
+            List<FileStatusProperties> itemsInDirectory = this.dataLake.ListItems(directoryName);
+            Func<bool> action = () => itemsInDirectory.Any(p => p.PathSuffix.Equals(outFile));
 
             // ASSERT
-            Assert.IsTrue(itemsInDirectory.Any(p => p.PathSuffix.Equals(outFile)));
+            action().Should().Be(true, "because the function returns true if the directory contains our uploaded file and the directory should contain it");
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryName, true).Wait();
@@ -80,13 +84,13 @@
             Func<bool> checkExistanceDelegate = () => dataLake.ListItems("/").Any(p => p.PathSuffix.Equals(directoryName.Substring(1)));
 
             // Check that the directory doesn't exist
-            Assert.IsFalse(checkExistanceDelegate());
+            checkExistanceDelegate().Should().Be(false, "because we've just ensured this directory does not exist by deleting it and listing the root should not list this directory");
 
             // ACT
             dataLake.CreateDirectory(directoryName).Wait();
 
             // ASSERT
-            Assert.IsTrue(checkExistanceDelegate());
+            checkExistanceDelegate().Should().Be(true, "because we just created the directory and listing the root should list this directory");
 
             // Clean up
             dataLake.DeleteDirectory(directoryName, true).Wait();
@@ -107,10 +111,13 @@
             this.dataLake.UploadFile(filepath, directoryName + "/" + filepath);
 
             // Assert that attempting to delete the directory with recursive:false while not empty throws an exception.
-            AssertHelper.Throws<Exception>(() => this.dataLake.DeleteDirectory(directoryName, recursive: false).Wait());
+            Action deleteDirectoryWithoutForce = () => this.dataLake.DeleteDirectory(directoryName, recursive: false).Wait();
+
+            deleteDirectoryWithoutForce.ShouldThrow<Exception>(
+                "because we should get an exception when attempting to delete a non-empty directory without specifying force:true");
 
             // Assert that the directory was not deleted
-            Assert.IsTrue(this.dataLake.PathExists(directoryName));
+            this.dataLake.PathExists(directoryName).Should().Be(true, "because we should not have been allowed to delete the directory so PathExists should return true");
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryName, true).Wait();
@@ -131,11 +138,10 @@
             File.WriteAllText(filepath, "some content");
             this.dataLake.UploadFile(filepath, directoryName + "/" + filepath);
 
-            // Assert that attempting to delete the directory with recursive:false while not empty throws an exception.
             this.dataLake.DeleteDirectory(directoryName, recursive: true).Wait();
 
             // Assert that the directory was not deleted
-            Assert.IsFalse(this.dataLake.PathExists(directoryName));
+            this.dataLake.PathExists(directoryName).Should().Be(false, "because we expect the directory to have been deleted, even though it was not empty, since we specified 'force':true");
 
             // Clean up
             File.Delete(filepath);
@@ -156,7 +162,7 @@
 
             lakeWithNonRootDirectory.DeleteDirectory(string.Empty, true).Wait();
 
-            Assert.IsFalse(lakeWithNonRootDirectory.PathExists(lakeWithNonRootDirectory.Directory));
+            lakeWithNonRootDirectory.PathExists(lakeWithNonRootDirectory.Directory).Should().Be(false, "because we have just deleted the directory and PathExists should now return false");
         }
 
         [TestCategory("IntegrationTest"), TestCategory("DataLake")]
@@ -176,7 +182,7 @@
             this.dataLake.DeleteFile(dataLakeFilePath).Wait();
 
             // ASSERT
-            Assert.IsFalse(this.dataLake.PathExists(dataLakeFilePath));
+            this.dataLake.PathExists(dataLakeFilePath).Should().Be(false, "because we have invoked delete on the file, and it should now no longer exist");
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryName, true).Wait();
@@ -190,7 +196,10 @@
             string directoryname = "integrationtest_deletefileondirectory";
             this.dataLake.CreateDirectory(directoryname).Wait();
 
-            AssertHelper.Throws<ArgumentException>(() => this.dataLake.DeleteFile(directoryname).Wait());
+            Action action = () => this.dataLake.DeleteFile(directoryname).Wait();
+
+            action.ShouldThrow<ArgumentException>(
+                "because we should get an argumentexception when invoking DeleteFile on a directory");
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryname).Wait();
@@ -215,7 +224,9 @@
             this.dataLake.UploadFile(localFilePath, dataLakeFilePath, true);
 
             // ASSERT that invoking delete directory on a file throws an ArgumentException
-            AssertHelper.Throws<ArgumentException>(() => this.dataLake.DeleteDirectory(dataLakeFilePath).Wait());
+            Action actionShouldThrow = () => this.dataLake.DeleteDirectory(dataLakeFilePath).Wait();
+            actionShouldThrow.ShouldThrow<Exception>(
+                "because invoking DeleteDirectory on a file should throw an exception");
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryname, true).Wait();
@@ -253,7 +264,7 @@
             string fileContents = File.ReadAllText(downloadFileName);
 
             // ASSERT that the file contents match the concatenation of the uploaded files
-            Assert.AreEqual("HelloWorld", fileContents);
+            fileContents.Should().StartWith("Hello").And.EndWith("World");
 
             // Clean up remote and local files/directories
             this.dataLake.DeleteDirectory(dataLakeDirectoryName, true).Wait();
@@ -285,7 +296,10 @@
             string contents = File.ReadAllText(downloadFileName);
 
             // ASSERT that the contents of the file contain the original + the appended text
-            Assert.AreEqual(string.Join(string.Empty, contentInOriginalFile, contentToAppend), contents, "The content of the appended file did not match the expected");
+            contents.Should()
+                .StartWith(contentInOriginalFile, "because the file originally contained this")
+                .And
+                .EndWith(contentToAppend, "because we have appended this content");
 
             // Clean up
             this.dataLake.DeleteDirectory(dataLakeDirectoryName, true).Wait();
@@ -300,7 +314,9 @@
         [TestMethod]
         public void DataLake_ListDirectories()
         {
-            AssertHelper.DoesNotThrow<Exception>(() => this.dataLake.ListItems("/"));
+            Action action = () => this.dataLake.ListItems("/");
+
+            action.ShouldNotThrow<Exception>();
         }
     }
 }

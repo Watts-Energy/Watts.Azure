@@ -23,7 +23,7 @@ namespace Watts.Azure.Tests
         private Mock<IBatchAccount> mockBatchAccount;
         private Mock<IBatchExecutionSettings> mockExecutionSettings;
         private Mock<IPrepareInputFiles> mockPrepareInput;
-        private Mock<IDependencyResolver> mockDependencyResolver;
+        private Mock<IBatchDependencyResolver> mockDependencyResolver;
         private Mock<ICloudAccountFactory> mockCloudAccountFactory;
         private Mock<IAzureBlobClient> mockBlobClient;
         private Mock<IAzureBatchClient> mockAzureBatchClient;
@@ -41,7 +41,7 @@ namespace Watts.Azure.Tests
             this.mockBatchAccount = new Mock<IBatchAccount>();
             this.mockExecutionSettings = new Mock<IBatchExecutionSettings>();
             this.mockPrepareInput = new Mock<IPrepareInputFiles>();
-            this.mockDependencyResolver = new Mock<IDependencyResolver>();
+            this.mockDependencyResolver = new Mock<IBatchDependencyResolver>();
             this.mockCloudAccountFactory = new Mock<ICloudAccountFactory>();
             this.mockBlobClient = new Mock<IAzureBlobClient>();
             this.mockAzureBatchClient = new Mock<IAzureBatchClient>();

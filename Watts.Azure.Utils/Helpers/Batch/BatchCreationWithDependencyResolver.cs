@@ -14,24 +14,24 @@ namespace Watts.Azure.Utils.Helpers.Batch
            : base(parent)
         {
             this.DependencyResolvers = parent == null
-                ? new List<IDependencyResolver>()
+                ? new List<IBatchDependencyResolver>()
                 : parent.DependencyResolvers;
         }
 
-        public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, IDependencyResolver dependencyResolver)
+        public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, IBatchDependencyResolver dependencyResolver)
             : base(parent, parent.StorageAccountSettings)
         {
-            this.DependencyResolvers = new List<IDependencyResolver>() { dependencyResolver };
+            this.DependencyResolvers = new List<IBatchDependencyResolver>() { dependencyResolver };
         }
 
-        public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, List<IDependencyResolver> dependencyResolvers)
+        public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, List<IBatchDependencyResolver> dependencyResolvers)
             : base(parent, parent.StorageAccountSettings)
         {
-            this.DependencyResolvers = new List<IDependencyResolver>() { };
+            this.DependencyResolvers = new List<IBatchDependencyResolver>() { };
             this.DependencyResolvers.AddRange(dependencyResolvers);
         }
 
-        public List<IDependencyResolver> DependencyResolvers { get; set; }
+        public List<IBatchDependencyResolver> DependencyResolvers { get; set; }
 
         /// <summary>
         /// Use the default pool setup where the JobId is BatchJob and PoolId is BatchPool.

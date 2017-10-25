@@ -4,6 +4,7 @@
     using System.Diagnostics;
     using System.IO;
     using System.Threading;
+    using FluentAssertions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Watts.Azure.Common.DataFactory.Copy;
     using Watts.Azure.Common.Security;
@@ -76,8 +77,8 @@
 
             // Assert that numberOfEntities are now present in the target table.
             var entitiesInTargetTable = targetTable.GetTop(1000);
-
-            Assert.AreEqual(10, entitiesInTargetTable.Count);
+            entitiesInTargetTable.Count.Should().Be(numberOfEntities,
+                "because we expect to find all entities copied to the target table");
         }
 
         /// <summary>
@@ -132,8 +133,8 @@
 
             string[] contents = File.ReadAllLines(downloadFileName);
 
-            // ASSERT that the number of lines are equal to one for each entity + one header.
-            Assert.AreEqual(numberOfEntities + 1, contents.Length);
+            // ASSERT
+            contents.Length.Should().Be(numberOfEntities + 1, $"because we expect to find one line for each entity we inserted in the source ({numberOfEntities}) and one for the header");
 
             // Clean up
             targetDataLake.DeleteDirectory(string.Empty, true).Wait();

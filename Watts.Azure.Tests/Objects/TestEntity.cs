@@ -1,6 +1,7 @@
 namespace Watts.Azure.Tests.Objects
 {
     using System;
+    using System.Runtime.Serialization;
     using Microsoft.WindowsAzure.Storage.Table;
 
     public class TestEntity : TableEntity

@@ -12,7 +12,7 @@ namespace Watts.Azure.Utils.Interfaces.Batch
     {
         IBatchExecutionSettings ExecutionSettings { get; }
 
-        List<IDependencyResolver> DependencyResolvers { get; set; }
+        List<IBatchDependencyResolver> DependencyResolvers { get; set; }
 
         BatchExecutionBase GetBatchExecution();
     }

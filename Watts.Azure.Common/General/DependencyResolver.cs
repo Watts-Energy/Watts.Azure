@@ -8,7 +8,7 @@ namespace Watts.Azure.Common.General
     /// <summary>
     /// General dependency resolver class for specifying the dependencies of an executable to run in Azure Batch.
     /// </summary>
-    public class DependencyResolver : IManualDependencyResolver
+    public class DependencyResolver : IManualBatchDependencyResolver
     {
         /// <summary>
         /// The function to use when resolving dependencies.

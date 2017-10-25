@@ -1,5 +1,6 @@
 namespace Watts.Azure.Tests
 {
+    using FluentAssertions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Watts.Azure.Common;
     using Watts.Azure.Common.Storage.Objects.Wrappers;
@@ -47,7 +48,7 @@ namespace Watts.Azure.Tests
             var image = PredefinedMachines.GetUbuntu14_04VmConfiguration(client);
 
             // ASSERT
-            Assert.IsNotNull(image);
+            image.Should().NotBeNull("because we expect to find the Ubuntu14_04 image");
         }
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace Watts.Azure.Tests
             var image = PredefinedMachines.GetDebian8VmConfiguration(client);
 
             // ASSERT
-            Assert.IsNotNull(image);
+            image.Should().NotBeNull("we expect to find a Debian 8 image");
         }
     }
 }

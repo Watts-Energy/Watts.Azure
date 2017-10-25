@@ -1,11 +1,13 @@
-﻿namespace Watts.Azure.Common.ServiceBus.Objects
+﻿namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System;
     using System.Linq;
     using General;
     using Interfaces.Security;
+    using Interfaces.ServiceBus;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
+    using Objects;
 
     /// <summary>
     /// This class represents a certain topology in Azure Service Bus. It can create auto-forwarding topics etc in a tree-structure that allows
@@ -55,7 +57,7 @@
         /// <summary>
         /// Management client for CRUD operations on the service bus API
         /// </summary>
-        private readonly AzureServiceBusManagement management;
+        private readonly IAzureServiceBusManagement management;
 
         /// <summary>
         /// Keeps track of the total number of topics that have been processed (created or deleted)
@@ -80,7 +82,7 @@
         /// <param name="authenticator">Authenticator for Azure AD</param>
         /// <param name="location">Location to create the bus</param>
         /// <param name="maxSubscribersPerTopic">(optional) The maximum number of subscribers to allow per topic.</param>
-        public AzureServiceBusTopology(string rootNamespace, string topicName, IAzureActiveDirectoryAuthentication authenticator, AzureLocation location, int maxSubscribersPerTopic = 2000)
+        public AzureServiceBusTopology(string rootNamespace, string topicName, IAzureServiceBusManagement serviceBusManagement, AzureLocation location, int maxSubscribersPerTopic = 2000)
         {
             this.rootNamespaceName = rootNamespace;
             this.maxSubscribersPerTopic = maxSubscribersPerTopic;
@@ -88,7 +90,7 @@
             this.location = location;
 
             // Create the management client for CRUD operations on namespaces and topics
-            this.management = new AzureServiceBusManagement(authenticator);
+            this.management = serviceBusManagement;
         }
 
         /// <summary>

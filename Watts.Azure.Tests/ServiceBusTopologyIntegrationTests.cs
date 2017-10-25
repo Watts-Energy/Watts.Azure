@@ -7,16 +7,13 @@
     using Common.General;
     using Common.Interfaces.Security;
     using Common.Security;
-    using Common.ServiceBus.Objects;
+    using Common.ServiceBus.Management;
     using FluentAssertions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Objects;
 
-    /// <summary>
-    /// Tests the creation of service bus topology
-    /// </summary>
     [TestClass]
-    public class ServiceBusTopologyTests
+    public class ServiceBusTopologyIntegrationTests
     {
         private TestEnvironmentConfig config;
 
@@ -24,9 +21,6 @@
 
         private IAzureActiveDirectoryAuthentication auth;
 
-        /// <summary>
-        /// Initialize the 
-        /// </summary>
         [TestInitialize]
         public void Setup()
         {
@@ -35,68 +29,6 @@
             this.serviceBusNamespaceName = this.config.ServiceBusEnvironment.NamespaceName;
             var credentials = this.config.ServiceBusEnvironment.Credentials;
             this.auth = new AzureActiveDirectoryAuthentication(this.config.ServiceBusEnvironment.SubscriptionId, this.config.ServiceBusEnvironment.ResourceGroupName, credentials);
-        }
-
-
-        /// <summary>
-        /// Test that the topology class generates the right topology when the number of subscriptions exceed the limit on the number of subscribers
-        /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
-        public void Topology_FewerSubscribersThanLimit_CreatesOnlyOneLevel()
-        {
-            // Set a number of subscriptions that is larger than the allowed number of subscriptions per topic.
-            int numberOfTopicSubscriptions = 200;
-            int azureSubscriptionLimit = 1000;
-            string topicName = "testTopic1";
-
-            AzureServiceBusTopology topology = this.GetTopologyInstance(topicName, azureSubscriptionLimit);
-
-            topology.GenerateBusTopology(numberOfTopicSubscriptions);
-
-            topology.GetNumberOfLeafTopics().Should()
-                .Be((int)Math.Ceiling((double) numberOfTopicSubscriptions / azureSubscriptionLimit));
-        }
-
-        /// <summary>
-        /// Test that the topology class generates the right topology when the number of subscriptions exceed the limit on the number of subscribers
-        /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
-        public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_OneSubLevel()
-        {
-            // Set a number of subscriptions that is larger than the allowed number of subscriptions per topic.
-            int numberOfTopicSubscriptions = 600;
-            int azureSubscriptionLimit = 100;
-            string topicName = "testTopic1";
-
-            AzureServiceBusTopology topology = this.GetTopologyInstance(topicName, azureSubscriptionLimit);
-
-            topology.GenerateBusTopology(numberOfTopicSubscriptions);
-
-            (numberOfTopicSubscriptions / azureSubscriptionLimit).Should().Be(topology.GetNumberOfLeafTopics());
-        }
-
-        /// <summary>
-        /// Tests that when there are more topics than the allowed number of subscriptions per topic squared, the next level is created (i.e. three levels)
-        /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
-        public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_TwoLevels()
-        {
-            // Set 1500 subscriptions, meaning that there should be three levels total, since only 10000 (100^2) can be supported on two levels
-            int numberOfTopicSubscriptions = 15000;
-            int azureSubscriptionLimit = 100;
-
-            string topicName = "testTopic2";
-
-            AzureServiceBusTopology topology = this.GetTopologyInstance(topicName, azureSubscriptionLimit);
-
-            topology.GenerateBusTopology(numberOfTopicSubscriptions);
-
-            int numberOfLeafNodes = topology.GetNumberOfLeafTopics();
-
-            (numberOfTopicSubscriptions / azureSubscriptionLimit).Should().Be(numberOfLeafNodes);
         }
 
         [TestCategory("IntegrationTest"), TestCategory("AzureBusTopology")]
@@ -115,9 +47,9 @@
             topology.GenerateBusTopology(numberOfTopicSubscriptions);
             topology.Emit();
 
-            var topics = managementClient.GetTopics(this.serviceBusNamespaceName, topicName);
+            var topics = managementClient.GetTopics(this.serviceBusNamespaceName, topicName).Where(p => p.SubscriptionCount != null && p.SubscriptionCount == 0).ToList();
 
-            topics.Count.Should().Be((numberOfTopicSubscriptions / azureSubscriptionLimit) + 1);
+            topics.Count.Should().Be((int)Math.Ceiling((double)numberOfTopicSubscriptions / azureSubscriptionLimit), "because we needed enough subscriptions to support 300, but with a limit of 100 on each topic");
 
             // Clean up (but leave the root)
             topology.Destroy(true);
@@ -149,11 +81,16 @@
 
             // ASSERT that the number of topics equal the expected. There are 200 subscribers and the limit on number of subscriptions is
             // 10, so there must be 20 topics to subscribe to.
-            topics.Count.Should().Be((int) (numberOfTopicSubscriptions / azureSubscriptionLimit));
+            topics.Count.Should().Be((int)Math.Ceiling((double)numberOfTopicSubscriptions / azureSubscriptionLimit), $"because we've asked for {numberOfTopicSubscriptions} subscriptions but only support {azureSubscriptionLimit} per topic");
 
             topology.Destroy();
         }
 
+        /// <summary>
+        /// Delete all topics whose name starts with the given pattern.
+        /// </summary>
+        /// <param name="managementClient"></param>
+        /// <param name="topicPattern"></param>
         internal void ClearTopics(AzureServiceBusManagement managementClient, string topicPattern)
         {
             // Delete all topics that match the pattern before starting the test.
@@ -175,7 +112,7 @@
 
         internal AzureServiceBusTopology GetTopologyInstance(string topicName, int numberOfSubscriptionsLimit = 2000)
         {
-            return new AzureServiceBusTopology(this.serviceBusNamespaceName, topicName, this.auth, AzureLocation.NorthEurope, numberOfSubscriptionsLimit);
+            return new AzureServiceBusTopology(this.serviceBusNamespaceName, topicName, new AzureServiceBusManagement(this.auth), AzureLocation.NorthEurope, numberOfSubscriptionsLimit);
         }
     }
 }

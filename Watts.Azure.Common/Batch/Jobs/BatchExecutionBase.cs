@@ -37,8 +37,8 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <param name="dependencyResolver">Dependency resolver to use when finding dependencies of the batch task assembly</param>
         /// <param name="cloudAccountFactory">Provides cloud accounts in a mockable way</param>
         /// <param name="log">A log to place debug and error message in (can be null)</param>
-        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, IDependencyResolver dependencyResolver, ICloudAccountFactory cloudAccountFactory, ILog log)
-            : this(account, settings, prepareInputFiles, new List<IDependencyResolver>() { dependencyResolver }, cloudAccountFactory, log)
+        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, IBatchDependencyResolver dependencyResolver, ICloudAccountFactory cloudAccountFactory, ILog log)
+            : this(account, settings, prepareInputFiles, new List<IBatchDependencyResolver>() { dependencyResolver }, cloudAccountFactory, log)
         {
         }
 
@@ -51,7 +51,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <param name="dependencyResolvers">Dependency resolvers to use when finding dependencies of the batch task assembly</param>
         /// <param name="cloudAccountFactory">Provides cloud accounts in a mockable way</param>
         /// <param name="log">A log to place debug and error message in (can be null)</param>
-        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, List<IDependencyResolver> dependencyResolvers, ICloudAccountFactory cloudAccountFactory, ILog log)
+        public BatchExecutionBase(IBatchAccount account, IBatchExecutionSettings settings, IPrepareInputFiles prepareInputFiles, List<IBatchDependencyResolver> dependencyResolvers, ICloudAccountFactory cloudAccountFactory, ILog log)
         {
             this.account = account;
             this.Settings = settings;
@@ -79,7 +79,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <summary>
         /// The dependency resolvers which will be invoked to find the files to upload.
         /// </summary>
-        public List<IDependencyResolver> DependencyResolvers { get; set; }
+        public List<IBatchDependencyResolver> DependencyResolvers { get; set; }
 
         /// <summary>
         /// The batch account

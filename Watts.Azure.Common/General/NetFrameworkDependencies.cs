@@ -8,7 +8,7 @@ namespace Watts.Azure.Common.General
     /// <summary>
     /// General-purpose dependency resolver for a .net executable. It finds all libraries and configs located in the same directory as an executable.
     /// </summary>
-    public class NetFrameworkDependencies : IDependencyResolver
+    public class NetFrameworkDependencies : IBatchDependencyResolver
     {
         /// <summary>
         /// The path to the .NET assembly that will be executed in Azure Batch.

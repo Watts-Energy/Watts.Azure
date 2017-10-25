@@ -2,6 +2,7 @@ namespace Watts.Azure.Tests
 {
     using System.Collections.Generic;
     using System.Linq;
+    using FluentAssertions;
     using Microsoft.Azure.Batch;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Watts.Azure.Common;
@@ -39,9 +40,11 @@ namespace Watts.Azure.Tests
                     OperatingSystemFamily.Windows);
 
             // ASSERT
-            string expectedResult = $"cmd /c {command.BaseCommand + " " + resourceFile.FilePath}";
-
-            Assert.AreEqual(expectedResult, constructedCommand);
+            constructedCommand
+                .Should().StartWith("cmd /c")
+                .And
+                .EndWith(resourceFile.FilePath, "because it should execute on the given input file")
+                .And.Contain(command.BaseCommand, "must specify the base command given");
         }
 
         /// <summary>
@@ -76,9 +79,15 @@ namespace Watts.Azure.Tests
                     OperatingSystemFamily.Windows);
 
             // ASSERT
-            string expectedResult = $"cmd /c {command.BaseCommand + " " + resourceFile.FilePath} && {programFileName} {resourceFile.FilePath}";
-
-            Assert.AreEqual(expectedResult.Trim(), constructedCommand.Trim());
+            constructedCommand.Should()
+                .StartWith("cmd /c")
+                .And
+                .Contain($"{command.BaseCommand} {resourceFile.FilePath} &&",
+                    "because it should run the base command on the given input file")
+                .And
+                .Contain("&&", "because it combines multiple commands")
+                .And
+                .EndWith($"{programFileName} {resourceFile.FilePath}", "because it should run the second command last");
         }
 
         /// <summary>
@@ -114,10 +123,16 @@ namespace Watts.Azure.Tests
                         null,
                         OperatingSystemFamily.Windows);
 
-            string expectedResult = $"cmd /c {command.BaseCommand + " " + resourceFile.FilePath + " " + command.Arguments.First()} && {programFileName} {resourceFile.FilePath} {command2.Arguments.First()}";
-
             // ASSERT
-            Assert.AreEqual(expectedResult.Trim(), constructedCommand.Trim());
+            constructedCommand.Should()
+                .StartWith("cmd /c", "because it was constructed for windows")
+                .And
+                .Contain($"{command.BaseCommand} {resourceFile.FilePath} {command.Arguments.First()}", "because it needs to run the base command on the input file with one argument")
+                .And
+                .Contain("&&", "because it combines multiple commands")
+                .And
+                .EndWith($"{programFileName} {resourceFile.FilePath} {command2.Arguments.First()}",
+                    "because it should run the second program on the input file and add an argument");
         }
     }
 }

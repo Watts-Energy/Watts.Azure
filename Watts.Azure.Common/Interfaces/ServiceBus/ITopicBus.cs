@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.Interfaces.General
+﻿namespace Watts.Azure.Common.Interfaces.ServiceBus
 {
     using System;
     using System.Threading.Tasks;

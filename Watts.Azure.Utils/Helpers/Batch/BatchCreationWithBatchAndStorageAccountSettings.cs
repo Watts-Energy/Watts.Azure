@@ -61,7 +61,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
         /// </summary>
         /// <param name="dependencyResolver"></param>
         /// <returns></returns>
-        public IBatchCreationWithDependencyResolver ResolveDependenciesUsing(IDependencyResolver dependencyResolver)
+        public IBatchCreationWithDependencyResolver ResolveDependenciesUsing(IBatchDependencyResolver dependencyResolver)
         {
             return new BatchCreationWithDependencyResolver(this, dependencyResolver);
         }
@@ -72,7 +72,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
         /// </summary>
         /// <param name="dependencyResolvers"></param>
         /// <returns></returns>
-        public IBatchCreationWithDependencyResolver ResolveDependenciesUsing(List<IDependencyResolver> dependencyResolvers)
+        public IBatchCreationWithDependencyResolver ResolveDependenciesUsing(List<IBatchDependencyResolver> dependencyResolvers)
         {
             return new BatchCreationWithDependencyResolver(this, dependencyResolvers);
         }

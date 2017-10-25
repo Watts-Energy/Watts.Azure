@@ -1,29 +1,29 @@
-﻿namespace Watts.Azure.Common.ServiceBus.Objects
+﻿namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
     using General;
     using Interfaces.Security;
+    using Interfaces.ServiceBus;
     using Microsoft.Azure.Management.ServiceBus;
     using Microsoft.Azure.Management.ServiceBus.Models;
     using Microsoft.Rest;
     using Microsoft.Rest.Azure;
-
+    using Objects;
 
     /// <summary>
     /// Provides CRUD-operations on azure service bus namespaces/topics, etc.
     /// The Service bus API is quite unstable and unreliable, so the strategy used is to retry failing operations up to a certain number of times
     /// before coming to the conclusion that there's an unresolvable problem with the communication.
     /// This is of course not optimal, but is necessary for the time being.
-    /// 
+    ///
     /// In addition, some of the methods on the service bus management client do not have async implementations, and therefore async variants can not
-    /// currently be provided in this implementation either. 
+    /// currently be provided in this implementation either.
     /// TODO implement async variants when the functionality is available in ServiceBusManagementClient.
     /// </summary>
-    public class AzureServiceBusManagement
+    public class AzureServiceBusManagement : IAzureServiceBusManagement
     {
         private const int NumberOfRetriesOnFailure = 5;
 
@@ -241,6 +241,7 @@
         /// </summary>
         /// <param name="namespaceName"></param>
         /// <param name="topicNamePattern"></param>
+        /// <param name="reportProgressDelegate"></param>
         public void DeleteTopics(string namespaceName, string topicNamePattern, Action<string> reportProgressDelegate = null)
         {
             var topics = this.GetTopics(namespaceName, topicNamePattern);
@@ -253,7 +254,6 @@
                 this.DeleteTopic(namespaceName, t.Name);
                 reportProgressDelegate?.Invoke($"Deleted {currentCount} of {totalCount} topics");
                 currentCount++;
-
             }
         }
 

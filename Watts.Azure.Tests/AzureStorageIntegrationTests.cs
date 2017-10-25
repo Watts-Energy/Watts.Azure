@@ -2,6 +2,7 @@ namespace Watts.Azure.Tests
 {
     using System;
     using System.IO;
+    using FluentAssertions;
     using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Watts.Azure.Common.Storage.Objects;
     using Watts.Azure.Tests.Objects;
@@ -50,9 +51,9 @@ namespace Watts.Azure.Tests
             var splitContent = downloadedBlob.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
 
             // ASSERT
-            Assert.AreEqual(2, splitContent.Length);
-            Assert.AreEqual(fileLines[0], splitContent[0]);
-            Assert.AreEqual(fileLines[1], splitContent[1]);
+            splitContent.Length.Should().Be(2, "because we wrote two lines to the file that we uploaded to blob storage");
+            fileLines[0].Should().Be(splitContent[0], "because this should match the first string we wrote to the file we uploaded to blob storage");
+            fileLines[1].Should().Be(splitContent[1], "because this should match the second string we wrote to the file we uploaded to blob storage");
 
             // CLEAN UP
             this.blobStorageUnderTest.DeleteContainerIfExists();
@@ -77,9 +78,11 @@ namespace Watts.Azure.Tests
 
             // ASSERT
             string localFileCopyName = "TestUploadFile_Downloaded.txt";
+            if(File.Exists(localFileCopyName)) {  File.Delete(localFileCopyName); }
+
             share.DownloadFile(filename, localFileCopyName);
 
-            Assert.AreEqual(File.ReadAllText(filename), File.ReadAllText(localFileCopyName));
+            File.ReadAllText(filename).Should().Be(File.ReadAllText(localFileCopyName), "because the contents of the file that we uploaded and then downloaded, should be equal");
 
             // Delete the local file
             File.Delete(filename);

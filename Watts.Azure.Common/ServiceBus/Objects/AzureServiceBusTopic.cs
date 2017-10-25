@@ -4,6 +4,8 @@
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Interfaces.General;
+    using Interfaces.ServiceBus;
+    using Interfaces.Wrappers;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
@@ -18,9 +20,9 @@
         private readonly string topicName;
         private readonly string subscriptionId;
 
-        private TopicClient topicClient;
-        private SubscriptionClient receiveClient;
-        private readonly NamespaceManager namespaceManager;
+        private readonly INamespaceManager namespaceManager;
+        private readonly ITopicClient topicClient;
+        private readonly ITopicSubscriptionClient topicSubscriptionClient;
 
         /// <summary>
         /// Create a new instance of AzureServiceBusTopic
@@ -28,16 +30,21 @@
         /// <param name="topicName"></param>
         /// <param name="subscriptionId"></param>
         /// <param name="connectionString"></param>
-        public AzureServiceBusTopic(string topicName, string subscriptionId, string connectionString)
+        /// <param name="namespaceManager"></param>
+        /// <param name="topicClient"></param>
+        /// <param name="topicSubscriptionClient"></param>
+        public AzureServiceBusTopic(string topicName, string subscriptionId, string connectionString, INamespaceManager namespaceManager, ITopicClient topicClient, ITopicSubscriptionClient topicSubscriptionClient)
         {
             this.topicName = topicName;
             this.subscriptionId = subscriptionId;
             this.connectionString = connectionString;
-            this.namespaceManager = NamespaceManager.CreateFromConnectionString(this.connectionString);
+            this.namespaceManager = namespaceManager;
+            this.topicClient = topicClient;
+            this.topicSubscriptionClient = topicSubscriptionClient;
         }
 
         /// <summary>
-        /// 
+        /// The service bus namespace name
         /// </summary>
         public string NamespaceName => new Regex("Endpoint=sb:\\/\\/(.*?).servicebus").Match(this.connectionString).Groups[1].Value;
 
@@ -50,8 +57,6 @@
         /// Initializing the topic ensures that 
         /// a) The topic exists
         /// b) if recreateSubscription is true, that it exists
-        /// c) that the topicclient is initialized and finally
-        /// d) that a subscriptionclient exists, to receive messages from the bus.
         /// </summary>
         /// <param name="recreateSubscription"></param>
         /// <param name="receiveMode"></param>
@@ -59,10 +64,6 @@
         {
             this.CreateTopicIfNotExists();
             this.CreateSubscriptionIfDoesntExist(recreateSubscription);
-
-            this.topicClient = TopicClient.CreateFromConnectionString(this.connectionString, this.topicName);
-
-            this.receiveClient = SubscriptionClient.CreateFromConnectionString(this.connectionString, this.topicName, this.subscriptionId, receiveMode);
         }
 
         public async Task SendMessage(object messageObject)
@@ -77,7 +78,7 @@
 
         public void Subscribe(Action<BrokeredMessage> subscriptionCallback)
         {
-            this.receiveClient.OnMessage(subscriptionCallback);
+            this.topicSubscriptionClient.OnMessage(subscriptionCallback);
         }
 
         internal void CreateTopicIfNotExists()

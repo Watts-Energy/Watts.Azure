@@ -10,9 +10,9 @@
 
         IBatchCreationWithBatchAndStorageAccountSettings RunStartupCommandOnAllNodes(BatchConsoleCommand command);
 
-        IBatchCreationWithDependencyResolver ResolveDependenciesUsing(IDependencyResolver dependencyResolver);
+        IBatchCreationWithDependencyResolver ResolveDependenciesUsing(IBatchDependencyResolver dependencyResolver);
 
-        IBatchCreationWithDependencyResolver ResolveDependenciesUsing(List<IDependencyResolver> dependencyResolvers);
+        IBatchCreationWithDependencyResolver ResolveDependenciesUsing(List<IBatchDependencyResolver> dependencyResolvers);
 
         IBatchCreationWithDependencyResolver NoDependencies();
     }

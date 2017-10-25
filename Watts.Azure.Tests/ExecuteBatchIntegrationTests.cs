@@ -25,7 +25,7 @@ namespace Watts.Azure.Tests
         [TestInitialize]
         public void Setup()
         {
-            // Set your environment here (i.e. create a class implementing IPredefinedBatchEnvironment and instantiate it here.
+            // Set your environment here (i.e. create a class implementing IBatchEnvironment and instantiate it here.
             // The default is to load it from a config file (located in the root of the test project and named 'testEnvironment.testenv').
             // The format is json and the extension .testenv is added to gitignore. Make sure you never commit that file, as that would share your
             // credentials.

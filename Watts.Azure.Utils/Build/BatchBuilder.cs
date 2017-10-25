@@ -29,7 +29,7 @@ namespace Watts.Azure.Utils.Build
         {
             if (!environment.IsValid())
             {
-                throw new InvalidPredefinedEnvironmentException("The environment passed to BatchBuilder.InPredefinedEnvironment is missing one or more settings. Please check and ensure that it is valid.");
+                throw new InvalidPredefinedEnvironmentException("The environment passed to BatchBuilder.InEnvironment is missing one or more settings. Please check and ensure that it is valid.");
             }
 
             var retVal = BatchBuilder.UsingAccountSettings(environment.BatchAccountSettings)

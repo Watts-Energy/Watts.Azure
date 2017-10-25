@@ -9,7 +9,6 @@ Azure Batch.
 You need an Azure batch account in order to do something with it: see https://azure.microsoft.com/en-us/services/batch/
 You will need, as a minimum, the batch account name and batch account key in order to execute anything.
 
-
 # Batch
 
 The overall idea used in batch is the following:

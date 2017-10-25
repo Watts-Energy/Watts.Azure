@@ -26,7 +26,7 @@
         [TestInitialize]
         public void Setup()
         {
-            // Set your environment here (i.e. create a class implementing IPredefinedBatchEnvironment and instantiate it here).
+            // Set your environment here (i.e. create a class implementing IBatchEnvironment and instantiate it here).
             // Or simply fill the properties
             this.environment = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment().BatchEnvironment;
         }

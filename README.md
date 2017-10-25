@@ -1,21 +1,24 @@
 # Introduction
 
-**Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
-having to know all the details and coding everything yourself. In addition, it contains utilities to make aspects of working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
-[Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/) and [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/) and [Azure Data Lake Store](https://azure.microsoft.com/en-us/services/data-lake-store/) easier.
-
-Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET rather than having to 
-code things from scratch and using the Azure Batch .NET API. It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
-
-It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
-
-Watts.Azure has a lot of utilities, but is not everything we want it to be. Yet!
-Be sure to check out the Issues section and feel free to add feature suggestions.
-
 The reason that Watts.Azure exists is, that we found that working with Azure Batch from .NET (especially to execute R code) seemed needlessly cumbersome and required you to write a lot of boilerplate code.
 We wanted create a simple interface to Azure Batch for those of us who do not need to know the details but would like to take advantage of the massive potential for scaling compute that it offers.
 
-It also contains utilities that make working with services like Azure Table Storage, Azure Blob Storage and Azure Data Factory easier from .NET.
+**Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
+having to know all the details and coding everything yourself. 
+In addition, it contains utilities to make aspects of working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
+[Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/), [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/), [Azure Data Lake Store](https://azure.microsoft.com/en-us/services/data-lake-store/) and [Azure Service Bus Topics](https://azure.microsoft.com/en-us/services/service-bus/) easier.
+
+Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET without dealing with all the low-level details. 
+It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
+
+It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
+
+Some tools for working with Azure Table Storage, Azure Blob Storage, Azure Service Bus Topics and Azure Data Factory are also implemented.
+
+Be sure to check out the Issues section and feel free to add feature suggestions.
+
+The next section contains a brief introduction to Azure Batch, along with some code examples of how to use Watts.Azure to simplify its use.
+The subsequent sections describe the utilities for using the [Azure Data Factory functionality in Watts.Azure](#azure-data-factory), and briefly describe the [Azure Service Bus topology helper](#azure-service-bus-topology), which allows you to automatically scale topics beyond the built-in limit of 2000 subscribers per topic.
 
 **NOTE**: The current compute nodes in Azure support .NET framework up to 4.5.2. There's currently no way to install higher versions without
 requiring a restart of the virtual machines in the Batch pool. If you're having trouble with executing your .NET executable in Batch, make sure you're targeting a version
@@ -54,14 +57,14 @@ basic things needed to execute something in Azure Batch, which are:
 And that's it. Everything else, meaning all communication with the Azure Batch account, upload of executables and input files, monitoring of the job and
 cleaning up afterwards, is handled by Watts.Azure.
 
-Let's see Watts.Azure in action!
-The following will execute an R-script named *myScript.R* on a single Windows Server R2 box in Azure Batch. In real life scenarios, you'd obviously want to perform this on possibly hundreds of nodes simultaneously.
+The following shows an example of how Watts.Azure can be used to run an R-script in Azure Batch.
+It executes an R-script named *myScript.R* on a single Windows Server R2 box in Azure Batch. In real life scenarios, you'd obviously want to perform this on more than a single node.
 
 **IMPORTANT NOTE:** If you want to run R in Azure Batch on VMs running Windows, a tiny amount of legwork is neccesary: See the section [**NOTE ON RUNNING R IN AZURE BATCH**](#note-on-running-r-in-azure-batch):
 
 ```cs
  var batch = BatchBuilder
-    .InPredefinedEnvironment(environment)
+    .InEnvironment(environment)
     .ResolveDependenciesUsing(new ResolveRScriptDependencies("./"))
     .WithDefaultPoolSetup()
     .ConfigureMachines(AzureMachineConfig.StandardD1_V2().Instances(numberOfNodes))
@@ -77,12 +80,12 @@ The following will execute an R-script named *myScript.R* on a single Windows Se
  batch.Wait();
 ```
 
-Here, **environment** is a class implementing *IPredefinedBatchEnvironment*, specifying the credentials for the batch account to use, and the
+Here, **environment** is a class implementing *IBatchEnvironment*, specifying the credentials for the batch account to use, and the
 credentials of the storage account where it's to put the application, input and (possibly) output files.
 You can create your own or simply use:
 
 ```cs
- IPredefinedBatchEnvironment env = new PredefinedBatchEnvironment()
+ IBatchEnvironment env = new BatchEnvironment()
  {
      BatchAccountSettings = new BatchAccountSettings()
      {
@@ -149,7 +152,7 @@ string relativePathToOutputHelper =
 outputStorage.DeleteContainerIfExists();
 
 var builder = BatchBuilder.
-    InPredefinedEnvironment(this.environment)
+    InEnvironment(this.environment)
     .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
     .WithPoolSetup(new BatchPoolSetup()
     {
@@ -213,7 +216,7 @@ outputStorage.DeleteContainerIfExists();
 
 // Create the builder with a specific job and pool id.
 var builder = BatchBuilder
-    .InPredefinedEnvironment(this.environment)
+    .InEnvironment(this.environment)
     .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
     .WithPoolSetup(new BatchPoolSetup() { JobId = "HybridBatchTestJob", PoolId = "HybridBatchTestPool" });
 
@@ -319,7 +322,7 @@ require(zoo, lib.loc = localPackagesFolderName)
 # Azure Data Factory
 We currently support Copy Table -> Table and Table -> DataLake, through the fluent interface.
 
-Similarly to working with batch, you will need an environment that implements *IPredefinedDataCopyEnvironment*. 
+Similarly to working with batch, you will need an environment that implements *IDataCopyEnvironment*. 
 Implementing this environment requires you to find the following information:
 1. Your subscription id (find it through the [Azure portal](https://portal.azure.com)).
 2. Application client id (explained below)
@@ -408,6 +411,30 @@ To do this, go to the [Azure Portal](https://portal.azure.com) and
 - Grant the application 'Read', 'Write' and 'Execute' permissions.
 - Don't forget to save.
 
+## Azure Service Bus Topology
+Azure Service Bus Topics have a limit on the number of subscriptions, which is 2000 currently (2017). 
+
+If you want to scale beyond that you will need to create a 'tree' of topics, where the root topic auto-forwards messages to the sub-topics.
+Adding one level lets you scale to 2000 * 2000 subscribers, since each of the 2000 children can support 2000 subscriptions.
+
+To make setting this up easier, we've added ```AzureServiceBusTopology```. It allows you to simply specify how many subscriptions you need to support, and it can set everything up for you.
+Lets say you wanted to support 10 000 subscriptions and wanted a maximum of 500 subscriptions per topic, you could do the following:
+
+```cs
+int maxSubscriptionsPerTopic = 500;
+int requiredNumberOfSubscriptions = 10000;
+var topology = new AzureServiceBusTopology("servicebus-namespace", "topic-name", new AzureServiceBusManagement(this.auth), AzureLocation.NorthEurope, maxSubscriptionsPerTopic);
+
+ topology.ReportOn(Console.WriteLine);
+            topology.GenerateBusTopology(requiredNumberOfSubscriptions);
+            topology.Emit();
+```
+and to delete the topics and subscriptions, call
+```cs
+topology.Destroy();
+```
+
+
 ## Test project
 In order to execute Integration Tests and Manual Tests in this project you will need to fill in various account information related to batch.
 
@@ -426,14 +453,23 @@ In case you only want to run Integration/Manual tests relevant to Batch, you wil
 
 To run Data Factory (Copy data) and Data Lake tests, fill in 
 - SubscriptionId
-- ActiveDirectoryTenantId
-- AdfClientId
-- ClientSecret
+- Credentials.TenantId
+- Credentials.ClientId
+- Credentials.ClientSecret
 - StorageAccountName
 - StorageAccountKey
 
 and additionally 
 - DataLakeStoreName
+
+To run Azure Service Bus tests fill
+- SubscriptionId
+- ResourceGroupName
+- NamespaceName
+- Location
+- Credentials.TenantId
+- Credentials.ClientId
+- Credentials.ClientSecret
 
 if you want to run tests that involve Azure Data Lake.
 Both the **DataCopyEnvironment** and **DataLakeEnvironment** have the above settings, except *DataLakeStoreName* which is exclusive to Data lake (obviously).

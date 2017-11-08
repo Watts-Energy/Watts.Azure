@@ -136,7 +136,6 @@
     <Compile Include="Interfaces\Batch\IBatchCreationWithPoolSetup.cs" />
     <Compile Include="Interfaces\Batch\IBatchExecution.cs" />
     <Compile Include="Interfaces\Batch\IBatchEnvironment.cs" />
-    <Compile Include="Interfaces\DataFactory\IDataFactoryEnvironment.cs" />
     <Compile Include="Interfaces\DataFactory\IDataCopyEnvironment.cs" />
     <Compile Include="Objects\AzureServiceBusEnvironment.cs" />
     <Compile Include="Objects\BatchEnvironment.cs" />

@@ -22,5 +22,10 @@
         {
             return this.topicClient.SendAsync(message);
         }
+
+        public void Send(BrokeredMessage message)
+        {
+            this.topicClient.Send(message);
+        }
     }
 }

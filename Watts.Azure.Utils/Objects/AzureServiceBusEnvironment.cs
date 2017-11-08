@@ -14,5 +14,7 @@
         public AzureLocation Location { get; set; }
 
         public AppActiveDirectoryAuthenticationCredentials Credentials { get; set; }
+
+        public string ServiceBusConnectionString { get; set; }
     }
 }

@@ -8,7 +8,7 @@
     {
         private readonly SubscriptionClient subscriptionClient;
 
-        private TopicSubscriptionClientWrapper(string connectionString, string topicPath, string name)
+        public TopicSubscriptionClientWrapper(string connectionString, string topicPath, string name)
         {
             this.subscriptionClient = SubscriptionClient.CreateFromConnectionString(connectionString, topicPath, name);
         }

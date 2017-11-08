@@ -6,5 +6,7 @@
     public interface ITopicClient
     {
         Task SendAsync(BrokeredMessage message);
+
+        void Send(BrokeredMessage message);
     }
 }

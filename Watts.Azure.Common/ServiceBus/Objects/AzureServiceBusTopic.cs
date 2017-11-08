@@ -3,8 +3,10 @@
     using System;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using General;
     using Interfaces.ServiceBus;
     using Interfaces.Wrappers;
+    using Management;
     using Microsoft.ServiceBus.Messaging;
 
     public class AzureServiceBusTopic : ITopicBus
@@ -16,11 +18,29 @@
 
         private readonly string connectionString;
         private readonly string topicName;
-        private readonly string subscriptionId;
+        private readonly string topicSubscriptionName;
 
         private readonly INamespaceManager namespaceManager;
         private readonly ITopicClient topicClient;
-        private readonly ITopicSubscriptionClient topicSubscriptionClient;
+        private ITopicSubscriptionClient topicSubscriptionClient;
+
+
+        public AzureServiceBusTopic(string topicName, string topicSubscriptionName, string connectionString)
+        {
+            this.topicName = topicName;
+            this.topicSubscriptionName = topicSubscriptionName;
+            this.connectionString = connectionString;
+
+            this.namespaceManager = NamespaceManagerWrapper.CreateFromConnectionString(this.connectionString);
+            this.topicClient = TopicClientWrapper.CreateFromConnectionString(this.connectionString, this.topicName);
+
+            // If there is a topic subscription name, create the subscription client.
+            if (!string.IsNullOrEmpty(this.topicSubscriptionName))
+            {
+                this.topicSubscriptionClient = new TopicSubscriptionClientWrapper(this.connectionString, this.topicName,
+                    this.topicSubscriptionName);
+            }
+        }
 
         /// <summary>
         /// Create a new instance of AzureServiceBusTopic
@@ -31,14 +51,46 @@
         /// <param name="namespaceManager"></param>
         /// <param name="topicClient"></param>
         /// <param name="topicSubscriptionClient"></param>
-        public AzureServiceBusTopic(string topicName, string subscriptionId, string connectionString, INamespaceManager namespaceManager, ITopicClient topicClient, ITopicSubscriptionClient topicSubscriptionClient)
+        public AzureServiceBusTopic(string topicName, string topicSubscriptionName, string connectionString, INamespaceManager namespaceManager, ITopicClient topicClient, ITopicSubscriptionClient topicSubscriptionClient)
         {
             this.topicName = topicName;
-            this.subscriptionId = subscriptionId;
+            this.topicSubscriptionName = topicSubscriptionName;
             this.connectionString = connectionString;
+
             this.namespaceManager = namespaceManager;
             this.topicClient = topicClient;
             this.topicSubscriptionClient = topicSubscriptionClient;
+        }
+
+        public void CreateIfNotExists(bool recreateSubscriptionEvenIfExists)
+        {
+            this.CreateTopicIfNotExists();
+            this.CreateSubscriptionIfDoesntExist(recreateSubscriptionEvenIfExists);
+        }
+
+        public int ClearMessages()
+        {
+            int numberOfMessagesCleared = 0;
+            DateTime lastReceivedMessage = DateTime.Now;
+
+            this.topicSubscriptionClient.OnMessage(p =>
+            {
+                p.Complete();
+                lastReceivedMessage = DateTime.Now;
+                numberOfMessagesCleared++;
+            });
+
+            // Continue popping and completing messages until we've not received any for a while.
+            Retry.Do(() => (DateTime.Now - lastReceivedMessage).TotalSeconds > 5)
+                .MaxTimes(10000)
+                .WithDelayInMs(200)
+                .Go();
+
+            // Recreate the subscription client
+            this.topicSubscriptionClient = new TopicSubscriptionClientWrapper(this.connectionString, this.topicName, this.topicSubscriptionName);
+            this.CreateSubscriptionIfDoesntExist(true);
+
+            return numberOfMessagesCleared;
         }
 
         /// <summary>
@@ -64,14 +116,19 @@
             this.CreateSubscriptionIfDoesntExist(recreateSubscription);
         }
 
-        public async Task SendMessage(object messageObject)
+        public async Task SendMessageAsync(object messageObject)
         {
             await this.topicClient.SendAsync(messageObject.ToBrokeredMessage());
         }
 
-        public async Task SendMessage(BrokeredMessage message)
+        public async Task SendMessageAsync(BrokeredMessage message)
         {
             await this.topicClient.SendAsync(message);
+        }
+
+        public void SendMessage(BrokeredMessage message)
+        {
+            this.topicClient.Send(message);
         }
 
         public void Subscribe(Action<BrokeredMessage> subscriptionCallback)
@@ -90,24 +147,25 @@
 
         internal void CreateSubscriptionIfDoesntExist(bool recreateSubscription)
         {
-            bool exists = this.namespaceManager.SubscriptionExists(this.topicName, this.subscriptionId);
+            bool exists = this.namespaceManager.SubscriptionExists(this.topicName, this.topicSubscriptionName);
             bool deleted = false;
 
             if (exists && recreateSubscription)
             {
-                this.namespaceManager.DeleteSubscription(this.topicName, this.subscriptionId);
+                this.namespaceManager.DeleteSubscription(this.topicName, this.topicSubscriptionName);
                 deleted = true;
             }
 
-            if (deleted || (exists && !recreateSubscription))
+            // If we just deleted the subscription, or if it already existed and we're supposed to recreaste it
+            if (deleted || !exists)
             {
                 if (!string.IsNullOrEmpty(this.sqlFilter))
                 {
-                    this.namespaceManager.CreateSubscription(this.topicName, this.subscriptionId, new SqlFilter(this.sqlFilter));
+                    this.namespaceManager.CreateSubscription(this.topicName, this.topicSubscriptionName, new SqlFilter(this.sqlFilter));
                 }
                 else
                 {
-                    this.namespaceManager.CreateSubscription(this.topicName, this.subscriptionId);
+                    this.namespaceManager.CreateSubscription(this.topicName, this.topicSubscriptionName);
                 }
             }
         }

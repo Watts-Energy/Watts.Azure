@@ -1,6 +1,7 @@
 ﻿namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using General;
     using Interfaces.ServiceBus;
@@ -176,6 +177,16 @@
         public int GetNumberOfLeafTopics()
         {
             return this.rootNode.FlattenNodes().Count(p => p.IsLeaf);
+        }
+
+        public IEnumerable<TreeNode<AzureServiceBusTopicInfo>> GetLeafNodes()
+        {
+            return this.rootNode.FlattenNodes().Where(p => p.IsLeaf);
+        }
+
+        public AzureServiceBusTopicInfo GetRootTopic()
+        {
+            return this.rootNode.Value;
         }
 
         /// <summary>

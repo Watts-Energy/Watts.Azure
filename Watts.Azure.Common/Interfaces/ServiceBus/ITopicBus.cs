@@ -8,7 +8,7 @@
     {
         void Initialize(bool recreateSubscription, ReceiveMode receiveMode = ReceiveMode.PeekLock);
 
-        Task SendMessage(object messageObject);
+        Task SendMessageAsync(object messageObject);
 
         void Subscribe(Action<BrokeredMessage> subscriptionCallback);
 

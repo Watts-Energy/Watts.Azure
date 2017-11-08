@@ -79,7 +79,8 @@
                     ClientId = "Application client id",
                     ClientSecret = "Application client secret",
                     TenantId = "Ad tenant id"
-                }
+                },
+                ServiceBusConnectionString = "Namespace connection string"
             }
         };
 

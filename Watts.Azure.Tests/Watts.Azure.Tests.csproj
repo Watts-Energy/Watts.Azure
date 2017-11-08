@@ -155,6 +155,7 @@
     <Compile Include="Objects\TestFacade.cs" />
     <Compile Include="Objects\TestObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServiceBusTopicIntegrationTests.cs" />
     <Compile Include="ServiceBusTopicUnitTests.cs" />
     <Compile Include="ServiceBusTopologyIntegrationTests.cs" />
     <Compile Include="ServiceBusTopologyUnitTests.cs" />

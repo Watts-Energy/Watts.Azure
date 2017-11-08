@@ -39,7 +39,7 @@
         {
             object someObject = new TestObject(1, "bla");
 
-            this.topic.SendMessage(someObject).Wait();
+            this.topic.SendMessageAsync(someObject).Wait();
 
             this.mockTopicClient.Verify(p => p.SendAsync(It.IsAny<BrokeredMessage>()), Times.Once);
         }
@@ -50,7 +50,7 @@
         {
             object someObject = new TestObject(1, "bla");
 
-            this.topic.SendMessage(someObject).Wait();
+            this.topic.SendMessageAsync(someObject).Wait();
 
             // Verify that the brokered message has the properties from the test object
             this.mockTopicClient.Verify(p => p.SendAsync(It.Is<BrokeredMessage>(q => q.Properties.ContainsKey("A") && q.Properties.ContainsKey("B"))));

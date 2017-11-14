@@ -46,7 +46,7 @@
         /// Create a new instance of AzureServiceBusTopic
         /// </summary>
         /// <param name="topicName"></param>
-        /// <param name="subscriptionId"></param>
+        /// <param name="topicSubscriptionName"></param>
         /// <param name="connectionString"></param>
         /// <param name="namespaceManager"></param>
         /// <param name="topicClient"></param>

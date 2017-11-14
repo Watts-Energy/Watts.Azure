@@ -13,5 +13,7 @@
         void Subscribe(Action<BrokeredMessage> subscriptionCallback);
 
         void SetFilter(string sqlFilter);
+
+        void CreateIfNotExists(bool recreateSubscriptionEvenIfExists);
     }
 }

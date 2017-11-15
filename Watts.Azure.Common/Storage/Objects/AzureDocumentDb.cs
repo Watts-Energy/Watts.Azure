@@ -3,7 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Net.Http;
+    using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
 
@@ -30,10 +32,25 @@
             this.CreateCollectionIfNotExists();
         }
 
+        public string CollectionName => this.collectionName;
+
+        public string DatabaseName => this.databaseName;
+
         /// <summary>
         /// Save the entity asynchronously
         /// </summary>
         /// <param name="entity">The entity to save. This must be serializable</param>
+        public async Task SaveAsync(object entity)
+        {
+            ResourceResponse<Document> response = await this.documentClient.UpsertDocumentAsync(
+                UriFactory.CreateDocumentCollectionUri(this.databaseName, this.collectionName), entity);
+
+            if (response.StatusCode != HttpStatusCode.Created && response.StatusCode == HttpStatusCode.OK)
+            {
+                throw new HttpRequestException($"Save returned {response.StatusCode}");
+            }
+        }
+
         public void Save(object entity)
         {
             var response = this.documentClient.UpsertDocumentAsync(
@@ -43,25 +60,47 @@
 
             if (response.IsFaulted)
             {
-                throw new HttpRequestException();
+                throw new HttpRequestException($"Error when saving document");
             }
         }
 
-        public List<T> Query<T>(Func<T, bool> predicate)
+        public async Task DeleteAsync<T>(Func<T, bool> predicate, PartitionKey partitionKey) where T : Resource
+        {
+            var docs = this.Query<T>(predicate);
+
+            var options = new RequestOptions {PartitionKey = partitionKey};
+
+            foreach (var doc in docs)
+            {
+                await this.documentClient.DeleteDocumentAsync(doc.SelfLink, options);
+            }
+        }
+
+        public IEnumerable<T> Query<T>(Func<T, bool> predicate)
         {
             FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1 };
 
-            // Here we find the Andersen family via its LastName
             var retVal = this.documentClient.CreateDocumentQuery<T>(
                     UriFactory.CreateDocumentCollectionUri(this.databaseName, this.collectionName), queryOptions)
-                    .Where(predicate).ToList();
+                    .Where(predicate);
 
             return retVal;
         }
 
-        public List<T> Query<T>(string query)
+        public int Count<T>(Func<T, bool> predicate)
         {
-            FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1 };
+            FeedOptions options = new FeedOptions() { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+
+            var retVal = this.documentClient.CreateDocumentQuery<T>(
+                    UriFactory.CreateDocumentCollectionUri(this.databaseName, this.collectionName), options)
+                .Where(predicate).Count();
+
+            return retVal;
+        }
+
+        public List<T> Query<T>(string query, FeedOptions options = null)
+        {
+            FeedOptions queryOptions = options ?? new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
 
             var retVal = this.documentClient.CreateDocumentQuery<T>(query, queryOptions).ToList();
 

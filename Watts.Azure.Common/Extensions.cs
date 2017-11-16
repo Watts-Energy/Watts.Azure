@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Reflection;
     using System.Text;
+    using General.Serialization;
     using Microsoft.ServiceBus.Messaging;
 
     public static class Extensions
@@ -108,9 +109,16 @@
             return dateTime.ToString("s");
         }
 
-        public static BrokeredMessage ToBrokeredMessage(this object obj)
+        public static BrokeredMessage ToBrokeredMessage(this object obj, MessageFormat messageFormat = MessageFormat.Json)
         {
-            BrokeredMessage message = new BrokeredMessage(obj);
+            object messageContent = messageFormat == MessageFormat.Json ? Json.ToJson(obj) : obj;
+
+            BrokeredMessage message = new BrokeredMessage(messageContent);
+
+            if (messageFormat == MessageFormat.Json)
+            {
+                message.ContentType = "application/json";
+            }
 
             foreach (PropertyInfo prop in obj.GetType().GetProperties())
             {
@@ -121,6 +129,18 @@
             }
 
             return message;
+        }
+
+        public static T GetContainedObject<T>(this BrokeredMessage message)
+        {
+            if (message.ContentType == "application/json")
+            {
+                return Json.FromJson<T>(message.GetBody<string>());
+            }
+            else
+            {
+                return message.GetBody<T>();
+            }
         }
     }
 }

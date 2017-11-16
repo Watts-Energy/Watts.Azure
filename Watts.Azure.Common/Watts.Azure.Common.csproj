@@ -152,6 +152,7 @@
     <Compile Include="DataFactory\General\LinkedServiceHelper.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Exceptions\AzureFileshareDoesNotExistException.cs" />
+    <Compile Include="Exceptions\CannotSetFilterOnInitializedServiceBusException.cs" />
     <Compile Include="Exceptions\CouldNotCreateTableException.cs" />
     <Compile Include="Exceptions\CouldNotInsertEntityException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertEntityException.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="General\NetFrameworkDependencies.cs" />
     <Compile Include="General\PrepareInputFiles.cs" />
     <Compile Include="General\Retry.cs" />
+    <Compile Include="General\Serialization\Json.cs" />
     <Compile Include="General\TopicSubscriptionClientWrapper.cs" />
     <Compile Include="General\TreeNode.cs" />
     <Compile Include="Interfaces\Batch\IBatchAccount.cs" />

@@ -45,6 +45,11 @@ namespace Watts.Azure.Common.Storage.Objects
             this.LogStatement(statement, LogLevel.Fatal);
         }
 
+        public void Log(string statement, LogLevel level)
+        {
+            this.LogStatement(statement, level);
+        }
+
         public List<LogStatementEntity> GetLastDays(int count)
         {
             CloudTable table = this.TableClient.GetTableReference(this.Name);

@@ -56,4 +56,10 @@
         AustraliaCentral2,
         AustraliaSouthEast
     }
+
+    public enum MessageFormat
+    {
+        Json,
+        Xml
+    }
 }

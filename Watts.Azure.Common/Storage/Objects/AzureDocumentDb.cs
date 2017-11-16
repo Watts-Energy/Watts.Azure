@@ -45,7 +45,7 @@
             ResourceResponse<Document> response = await this.documentClient.UpsertDocumentAsync(
                 UriFactory.CreateDocumentCollectionUri(this.databaseName, this.collectionName), entity);
 
-            if (response.StatusCode != HttpStatusCode.Created && response.StatusCode == HttpStatusCode.OK)
+            if (response.StatusCode != HttpStatusCode.Created && response.StatusCode != HttpStatusCode.OK)
             {
                 throw new HttpRequestException($"Save returned {response.StatusCode}");
             }

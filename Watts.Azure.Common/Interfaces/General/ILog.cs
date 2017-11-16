@@ -12,5 +12,7 @@ namespace Watts.Azure.Common.Interfaces.General
         void Error(string statement);
 
         void Fatal(string statement);
+
+        void Log(string statement, LogLevel level);
     }
 }

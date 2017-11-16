@@ -3,6 +3,7 @@
     using System;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using Exceptions;
     using General;
     using Interfaces.ServiceBus;
     using Interfaces.Wrappers;
@@ -24,6 +25,7 @@
         private readonly ITopicClient topicClient;
         private ITopicSubscriptionClient topicSubscriptionClient;
 
+        private bool isInitialized = false;
 
         public AzureServiceBusTopic(string topicName, string topicSubscriptionName, string connectionString)
         {
@@ -100,6 +102,11 @@
 
         public void SetFilter(string filter)
         {
+            if (this.isInitialized)
+            {
+                throw new CannotSetFilterOnInitializedServiceBusException();    
+            }
+
             this.sqlFilter = filter;
         }
 
@@ -113,7 +120,11 @@
         public void Initialize(bool recreateSubscription, ReceiveMode receiveMode = ReceiveMode.PeekLock)
         {
             this.CreateTopicIfNotExists();
+
+
             this.CreateSubscriptionIfDoesntExist(recreateSubscription);
+
+            this.isInitialized = true;
         }
 
         public async Task SendMessageAsync(object messageObject)
@@ -147,6 +158,12 @@
 
         internal void CreateSubscriptionIfDoesntExist(bool recreateSubscription)
         {
+            // If the topic subscription name is empty, just return
+            if (string.IsNullOrEmpty(this.topicSubscriptionName))
+            {
+                return;
+            }
+
             bool exists = this.namespaceManager.SubscriptionExists(this.topicName, this.topicSubscriptionName);
             bool deleted = false;
 

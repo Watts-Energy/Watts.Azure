@@ -3,6 +3,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using Common;
     using Common.Batch.Objects;
     using Common.General;
     using Common.Interfaces.General;
@@ -39,11 +40,18 @@ namespace Watts.Azure.Utils.Helpers.Batch
         public bool CreateStatistics { get; set; } = false;
 
         /// <summary>
+        /// The format in which status should be reported while a batch is executing.
+        /// </summary>
+        public ReportPoolStatusFormat ReportStatusFormat { get; set; }
+
+        /// <summary>
         /// A progress delegate that is used to report progress on.
         /// </summary>
         protected Action<string> ProgressReportDelegate { get; set; }
 
         protected bool CleanUpAfterExecution { get; set; } = true;
+
+        protected string RedirectOutputToFileName { get; set; }
 
         /// <summary>
         /// The log to log errors and debug information into.
@@ -84,9 +92,21 @@ namespace Watts.Azure.Utils.Helpers.Batch
             return this;
         }
 
+        public IBatchCreationWithInputPreparation ReportStatusInFormat(ReportPoolStatusFormat statusFormat)
+        {
+            this.ReportStatusFormat = statusFormat;
+            return this;
+        }
+
         public IBatchCreationWithInputPreparation UploadOutputTo(BatchOutputContainer outputContainer)
         {
             this.OutputContainer = outputContainer;
+            return this;
+        }
+
+        public IBatchCreationWithInputPreparation RedirectOutputToFile(string filename)
+        {
+            this.RedirectOutputToFileName = filename;
             return this;
         }
 

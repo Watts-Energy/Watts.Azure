@@ -48,5 +48,9 @@ namespace Watts.Azure.Common.Interfaces.Batch
         BatchOutputContainer OutputContainer { get; set; }
 
         bool SaveStatistics { get; set; }
+
+        string RedirectOutputToFileName { get; set; }
+
+        ReportPoolStatusFormat ReportStatusFormat { get; set; }
     }
 }

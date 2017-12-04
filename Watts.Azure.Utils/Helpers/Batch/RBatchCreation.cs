@@ -90,15 +90,17 @@ namespace Watts.Azure.Utils.Helpers.Batch
                     new ApplicationPackageReference()
                     {
                         ApplicationId = "R",
-                                    Version = this.RVersion
-                                }
-                    };
+                        Version = this.RVersion
+                    }
+                };
 
                 IBatchExecutionSettings retVal = new BatchExecutionSettings(executableInfos, this.StartupNodeCommand, this.ExecuteTaskCommands, this.BatchAccountSettings, this.PoolSetup, this.StorageAccountSettings, this.MachineConfig, applicationReferences, this.CleanUpAfterExecution);
 
                 retVal.TimeoutInMinutes = this.TimeoutInMinutes;
                 retVal.SaveStatistics = this.CreateStatistics;
                 retVal.OutputContainer = this.OutputContainer;
+                retVal.RedirectOutputToFileName = this.RedirectOutputToFileName;
+                retVal.ReportStatusFormat = this.ReportStatusFormat;
 
                 return retVal;
             }
@@ -106,14 +108,11 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
         private int MaxRScriptMemoryMb
         {
-            get
-            {
-                return this.maxRScriptMemoryMb;
-            }
+            get => this.maxRScriptMemoryMb;
 
             set
             {
-                this.ExecuteTaskCommands.First().BaseCommand.Replace($"--max-mem-size={this.maxRScriptMemoryMb}M", $"--max-mem-size={value}M");
+                this.ExecuteTaskCommands.First().BaseCommand = this.ExecuteTaskCommands.First().BaseCommand.Replace($"--max-mem-size={this.maxRScriptMemoryMb}M", $"--max-mem-size={value}M");
                 this.maxRScriptMemoryMb = value;
             }
         }

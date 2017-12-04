@@ -215,7 +215,7 @@ namespace Watts.Azure.Common.Batch.Objects
             foreach (ResourceFile inputFile in inputFiles)
             {
                 string taskId = "task_" + inputFiles.IndexOf(inputFile);
-                string outFile = $"{taskId}_output.txt";
+                string outFile = this.executionSettings.RedirectOutputToFileName;
 
                 string taskCommandLine =
                     consoleHelper.ConstructCommand(
@@ -230,6 +230,7 @@ namespace Watts.Azure.Common.Batch.Objects
                         ? Watts.Azure.Common.Constants.BatchTaskDirLinux
                         : Watts.Azure.Common.Constants.BatchTaskDirWindows;
                     string uploadExecutableName = "Watts.Azure.Common.OutputHelper.exe";
+
                     string arguments = $"\"{this.executionSettings.OutputContainer.ConnectionString}\" task_{inputFiles.IndexOf(inputFile)}_output {taskDirEnvironmentVariableName}\\{outFile}";
                     taskCommandLine += " && " + uploadExecutableName + " " + string.Join(" ", arguments);
                 }
@@ -259,7 +260,7 @@ namespace Watts.Azure.Common.Batch.Objects
         /// <returns></returns>
         public async Task<bool> MonitorAll(string jobId)
         {
-            var monitor = new AzureBatchTaskMonitor(this.BatchClient, jobId, this.ProgressDelegate);
+            var monitor = new AzureBatchTaskMonitor(this.BatchClient, jobId, this.ProgressDelegate, this.executionSettings.ReportStatusFormat);
 
             try
             {

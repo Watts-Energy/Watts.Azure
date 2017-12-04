@@ -89,7 +89,22 @@ namespace Watts.Azure.Common.Batch.Objects
         /// </summary>
         public bool CleanupAfterwards { get; set; }
 
+        /// <summary>
+        /// Indicates whether a statistics entity should be saved when the batch completes, storing various things related to the batch
+        /// that was executed, e.g. how long it took, how many nodes were used, etc.
+        /// </summary>
         public bool SaveStatistics { get; set; }
+
+        /// <summary>
+        /// The name of the output file that output should be redirected to when executing a task.
+        /// If this is empty, output is not redirected.
+        /// </summary>
+        public string RedirectOutputToFileName { get; set; }
+
+        /// <summary>
+        /// The format in which progress should be reported while a batch is running.
+        /// </summary>
+        public ReportPoolStatusFormat ReportStatusFormat { get; set; } = ReportPoolStatusFormat.GroupedByState;
 
         /// <summary>
         /// Credentials for the batch account.

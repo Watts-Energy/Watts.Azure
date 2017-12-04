@@ -47,8 +47,8 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
         public BatchExecutableInfo ExecutableInfo
         {
-            get { return this.executableInfo; }
-            set { this.executableInfo = value; }
+            get => this.executableInfo;
+            set => this.executableInfo = value;
         }
 
         public IBatchExecutionSettings ExecutionSettings
@@ -60,6 +60,8 @@ namespace Watts.Azure.Utils.Helpers.Batch
                 retVal.TimeoutInMinutes = this.TimeoutInMinutes;
                 retVal.SaveStatistics = this.CreateStatistics;
                 retVal.OutputContainer = this.OutputContainer;
+                retVal.RedirectOutputToFileName = this.RedirectOutputToFileName;
+                retVal.ReportStatusFormat = this.ReportStatusFormat;
 
                 return retVal;
             }

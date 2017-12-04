@@ -23,8 +23,8 @@ namespace Watts.Azure.Common.Batch.Objects
 
         public DateTime StartTime
         {
-            get { return this.startTime; }
-            set { this.startTime = value; }
+            get => this.startTime;
+            set => this.startTime = value;
         }
 
         public void ReportStatus(List<CloudTask> tasks)

@@ -4,6 +4,7 @@ namespace Watts.Azure.Common.Batch.Jobs
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Exceptions;
     using Interfaces.Batch;
     using Interfaces.General;
     using Interfaces.Wrappers;
@@ -26,7 +27,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         private IStorageAccount storageAccount;
         private IAzureBlobClient blobClient;
 
-        private List<TaskOutput> taskOutputs = new List<TaskOutput>();
+        private readonly List<TaskOutput> taskOutputs = new List<TaskOutput>();
 
         /// <summary>
         /// Creates a new instance of BatchExecutionBase.
@@ -104,6 +105,8 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <returns>Execution task</returns>
         public async Task StartBatch()
         {
+            this.Validate();
+
             // If an output container was given, delete it before running, so that we know all its contents belong to the current batch
             if (this.Settings.OutputContainer != null)
             {
@@ -140,6 +143,14 @@ namespace Watts.Azure.Common.Batch.Jobs
                 Console.WriteLine("Pool already exists, will monitor...");
                 await this.MonitorJobUntilCompletionAsync();
                 await this.CleanUpIfRequired();
+            }
+        }
+
+        private void Validate()
+        {
+            if (this.Settings.OutputContainer != null && string.IsNullOrEmpty(this.Settings.RedirectOutputToFileName))
+            {
+                throw new MustRedirectOutputException("You've specified an output container, but the file to redirect output to has not been specified. This is necessary in order to upload the output after the batch completes.");
             }
         }
 

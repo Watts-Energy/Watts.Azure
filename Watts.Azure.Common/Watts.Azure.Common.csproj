@@ -156,6 +156,7 @@
     <Compile Include="Exceptions\CouldNotCreateTableException.cs" />
     <Compile Include="Exceptions\CouldNotInsertEntityException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertEntityException.cs" />
+    <Compile Include="Exceptions\MustRedirectOutputException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="General\ConsoleCommandHelper.cs" />
     <Compile Include="General\DependencyResolver.cs" />

@@ -14,7 +14,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
 
         public DataCopyBuilderWithCopySetup UsingDefaultCopySetup()
         {
-            CopySetup setup = new CopySetup()
+            CopySetup setup = new CopySetup
             {
                 SourceDatasetName = "SourceDataset",
                 SourceLinkedServiceName = "SourceLinkedService",

@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.Diagnostics;
@@ -11,10 +11,11 @@
     using Common.ServiceBus.Objects;
     using FluentAssertions;
     using Microsoft.ServiceBus.Messaging;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using NUnit.Framework;
     using Objects;
+    using Constants = Tests.Constants;
 
-    [TestClass]
+    [TestFixture]
     public class ServiceBusTopicIntegrationTests
     {
         private string topicName;
@@ -24,7 +25,7 @@
         private IAzureActiveDirectoryAuthentication auth;
         private AzureServiceBusTopic topic;
 
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.config = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment();
@@ -47,7 +48,7 @@
             Trace.WriteLine($"Cleared {clearedMessages} from the topic subscriber");
         }
 
-        [TestMethod, TestCategory("IntegrationTest")]
+        [Test, Category("IntegrationTest")]
         public void SimplePublishSubscribeToTopic()
         {
             BrokeredMessage receivedMessage = null;
@@ -69,7 +70,7 @@
         /// <summary>
         /// Tests that when there are multiple subscriptions on one topic, a message delivered on the topic is passed to both subscribers
         /// </summary>
-        [TestMethod, TestCategory("IntegrationTest")]
+        [Test, Category("IntegrationTest")]
         public void MultipleSubscriptionsToTopic_BothSubscribersReceiveMessage()
         {
             // Create an additional subscription
@@ -97,7 +98,7 @@
             receivedBySecondTopic.Should().NotBeNull("because the second topic subscription should receive the message");
         }
 
-        [TestMethod, TestCategory("IntegrationTest"), TestCategory("AzureBusTopology")]
+        [Test, Category("IntegrationTest"), Category("AzureBusTopology")]
         public void MultiLayerTopology_SubsriptionsAtLeaf_ReceivesMessagesSentToRoot()
         {
             int subscribersPerTopic = 5;

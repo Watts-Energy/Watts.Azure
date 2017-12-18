@@ -1,24 +1,24 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.UnitTests
 {
     using System.Collections.Generic;
     using System.Linq;
+    using Azure.Utils;
+    using Azure.Utils.Helpers.Batch;
+    using Common;
+    using Common.Batch.Objects;
+    using Common.General;
     using FluentAssertions;
     using Microsoft.Azure.Batch;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common;
-    using Watts.Azure.Common.Batch.Objects;
-    using Watts.Azure.Common.General;
-    using Watts.Azure.Utils;
-    using Watts.Azure.Utils.Helpers.Batch;
+    using NUnit.Framework;
 
-    [TestClass]
+    [TestFixture]
     public class ConsoleCommandHelperUnitTests
     {
         /// <summary>
         /// Tests that constructing a single Windows command is done correctly, when the command has no additional arguments.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void CombinesSingleCommandWithInputFileNamesCorrectly()
         {
             // ARRANGE
@@ -50,8 +50,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that combining multiple Windows commands, none of which specify additional arguments, is done correctly.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void CombinesMultipleCommandsWithInputFileNamesCorrectly()
         {
             // ARRANGE
@@ -93,8 +93,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when multiple Windows commands are combined, which all have arguments, the command is as expected.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void CombinesMultipleCommands_WithArguments_WithInputFileNamesCorrectly()
         {
             // ARRANGE

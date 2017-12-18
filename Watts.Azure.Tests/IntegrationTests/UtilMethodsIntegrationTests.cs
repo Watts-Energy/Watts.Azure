@@ -1,14 +1,14 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common.Interfaces.General;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Tests.Objects;
+    using Common.Interfaces.General;
+    using Common.Storage.Objects;
+    using NUnit.Framework;
+    using Objects;
 
     /// <summary>
     /// Tests various utility methods, e.g. logging methods.
     /// </summary>
-    [TestClass]
+    [TestFixture]
     public class UtilMethodsIntegrationTests
     {
         private ILog logUnderTest;
@@ -18,7 +18,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         ///  Create the log under test.
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.testEnvironmentCredentials = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment();
@@ -29,8 +29,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to use the log to write a debug statement.
         /// </summary>
-        [TestCategory("IntegrationTest")]
-        [TestMethod]
+        [Category("IntegrationTest")]
+        [Test]
         public void Log_WriteDebug_WritesDebugToLog()
         {
             this.logUnderTest.Debug("some debug statement (Integration test)");

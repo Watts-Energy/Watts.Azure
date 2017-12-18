@@ -1,17 +1,17 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.UnitTests
 {
     using System;
     using Common;
     using Common.Interfaces.ServiceBus;
     using Common.ServiceBus.Management;
     using FluentAssertions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
+    using NUnit.Framework;
 
     /// <summary>
     /// Tests the creation of service bus topology
     /// </summary>
-    [TestClass]
+    [TestFixture]
     public class ServiceBusTopologyUnitTests
     {
         private Mock<IAzureServiceBusManagement> mockServiceBusManagement;
@@ -21,7 +21,7 @@
         /// <summary>
         /// Initialize the
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.mockServiceBusManagement = new Mock<IAzureServiceBusManagement>();
@@ -32,8 +32,8 @@
         /// <summary>
         /// Test that the topology class generates the right topology when the number of subscriptions exceed the limit on the number of subscribers
         /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
+        [Category("UnitTest"), Category("AzureBusTopology")]
+        [Test]
         public void Topology_FewerSubscribersThanLimit_CreatesOnlyOneLevel()
         {
             // Set a number of subscriptions that is larger than the allowed number of subscriptions per topic.
@@ -48,24 +48,24 @@
         /// <summary>
         /// Test that the topology class generates the right topology when the number of subscriptions exceed the limit on the number of subscribers
         /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
+        [Category("UnitTest"), Category("AzureBusTopology")]
+        [Test]
         public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_OneSubLevel()
         {
             // Set a number of subscriptions that is larger than the allowed number of subscriptions per topic.
             int numberOfTopicSubscriptions = 3 * this.subscribersPerTopicLimit;
 
-            topology.GenerateBusTopology(numberOfTopicSubscriptions);
+            this.topology.GenerateBusTopology(numberOfTopicSubscriptions);
 
-            topology.GetNumberOfLeafTopics().Should()
+            this.topology.GetNumberOfLeafTopics().Should()
                 .Be((int)Math.Ceiling((double)numberOfTopicSubscriptions / this.subscribersPerTopicLimit), "because the limit on number of subscriptions per topic is less than the number of subscriptions needed, which should lead to the creation of child subscriptions");
         }
 
         /// <summary>
         /// Tests that when there are more topics than the allowed number of subscriptions per topic squared, the next level is created (i.e. three levels)
         /// </summary>
-        [TestCategory("UnitTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
+        [Category("UnitTest"), Category("AzureBusTopology")]
+        [Test]
         public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_TwoLevels()
         {
             // Set a very high number of subscriptions, leaading to three levels total

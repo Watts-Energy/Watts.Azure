@@ -1,21 +1,22 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.ManualTests
 {
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common;
-    using Watts.Azure.Common.Batch.Objects;
-    using Watts.Azure.Common.General;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Common.Storage.Objects.Wrappers;
-    using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Utils.Build;
-    using Watts.Azure.Utils.Helpers.Batch;
-    using Watts.Azure.Utils.Interfaces.Batch;
+    using Azure.Utils.Build;
+    using Azure.Utils.Helpers.Batch;
+    using Azure.Utils.Interfaces.Batch;
+    using Common;
+    using Common.Batch.Objects;
+    using Common.General;
+    using Common.Storage.Objects;
+    using Common.Storage.Objects.Wrappers;
+    using NUnit.Framework;
+    using Objects;
+    using Constants = Tests.Constants;
 
-    [TestClass]
+    [TestFixture]
     public class ExecuteBatchManualTests
     {
         private IBatchEnvironment environment;
@@ -23,7 +24,7 @@
         /// <summary>
         /// Setup the test by creating the environment.
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             // Set your environment here (i.e. create a class implementing IBatchEnvironment and instantiate it here).
@@ -34,8 +35,8 @@
         /// <summary>
         /// Tests that is is possible to find a linux image in the azure marketplace, by its id.
         /// </summary>
-        [TestMethod]
-        [TestCategory("ManualTest")]
+        [Test]
+        [Category("ManualTest")]
         public void GetLinuxBoxById_FindsImage()
         {
             // ARRANGE
@@ -55,8 +56,8 @@
         /// Note that this does not test correctness at all, simply that the execution works (does not throw exceptions).
         /// This is meant mainly as a documentation test.
         /// </summary>
-        [TestMethod]
-        [TestCategory("ManualTest")]
+        [Test]
+        [Category("ManualTest")]
         public void RunSimpleRScriptOnLinux()
         {
             // ARRANGE
@@ -105,8 +106,8 @@
         /// Note that this does not assert correctness, it merely checks that the execution can be done without any exceptions being
         /// thrown by the code.
         /// </summary>
-        [TestMethod]
-        [TestCategory("ManualTest")]
+        [Test]
+        [Category("ManualTest")]
         public void RunSimpleRScriptOWindows()
         {
             // ARRANGE
@@ -145,8 +146,8 @@
         /// Note that this does not test correctness, it merely checks that the execution can be done without any exceptions being
         /// thrown by the code.
         /// </summary>
-        [TestMethod]
-        [TestCategory("ManualTest")]
+        [Test]
+        [Category("ManualTest")]
         public void RunSimpleRScriptOWindowsAndStoreOutput()
         {
             // ARRANGE
@@ -202,8 +203,8 @@
         /// The test verifies that the output from the task (which is uploaded to blob by OutputHelper.exe) actually contains the strings
         /// 'Hello' and 'World'.
         /// </summary>
-        [TestCategory("ManualTest")]
-        [TestMethod]
+        [Category("ManualTest")]
+        [Test]
         public void ExecuteHybridBatch()
         {
             // ARRANGE

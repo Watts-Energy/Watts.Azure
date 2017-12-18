@@ -1,19 +1,19 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.Diagnostics;
     using System.IO;
     using System.Threading;
+    using Azure.Utils.Build;
+    using Azure.Utils.Objects;
+    using Common.DataFactory.Copy;
+    using Common.Security;
+    using Common.Storage.Objects;
     using FluentAssertions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common.DataFactory.Copy;
-    using Watts.Azure.Common.Security;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Utils.Build;
-    using Watts.Azure.Utils.Objects;
+    using NUnit.Framework;
+    using Objects;
 
-    [TestClass]
+    [TestFixture]
     public class DataFactoryIntegrationTests
     {
         private DataCopyEnvironment environment;
@@ -21,7 +21,7 @@ namespace Watts.Azure.Tests
         private AzureActiveDirectoryAuthentication dataFactoryAuthentication;
         private AzureActiveDirectoryAuthentication dataLakeAuthentication;
 
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.environment = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment().DataCopyEnvironment;
@@ -39,8 +39,8 @@ namespace Watts.Azure.Tests
                 this.dataLakeEnvironment.Credentials);
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("DataFactory")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataFactory")]
+        [Test]
         public void CopyData_SimpleDataCopyTableToTable()
         {
             // ARRANGE
@@ -85,9 +85,9 @@ namespace Watts.Azure.Tests
         /// Tests that copying data from a table to a data lake works. A table is populated with a number of entities, which are then copied to data lake.
         /// The resulting file in the data lake store is then downloaded and the number of lines compared with the number of entities inserted into the table.
         /// </summary>
-        [TestCategory("IntegrationTest")]
-        [TestCategory("DataFactory")]
-        [TestMethod]
+        [Category("IntegrationTest")]
+        [Category("DataFactory")]
+        [Test]
         public void CopySimpleData_FromTable_ToDataLake()
         {
             // ARRANGE

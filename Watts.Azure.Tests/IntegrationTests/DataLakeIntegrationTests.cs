@@ -1,18 +1,18 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Azure.Utils.Objects;
+    using Common.Security;
+    using Common.Storage.Objects;
     using FluentAssertions;
     using Microsoft.Azure.Management.DataLake.Store.Models;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common.Security;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Utils.Objects;
+    using NUnit.Framework;
+    using Objects;
 
-    [TestClass]
+    [TestFixture]
     public class DataLakeIntegrationTests
     {
         private DataLakeStoreEnvironment dataLakeEnvironment;
@@ -22,7 +22,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Set up by creating the data lake store.
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.dataLakeEnvironment = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment().DataLakeEnvironment;
@@ -39,8 +39,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to create a file in the data lake
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_CreateFile()
         {
             // ARRANGE
@@ -68,8 +68,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to create a directory
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_CreateDirectory()
         {
             // ARRANGE
@@ -98,8 +98,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when deleting a directory that is not empty, and specifying that the delete is NOT recursive, an exception is thrown.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteDirectoryWhenNotEmptyWithoutForce_ThrowsException()
         {
             // ARRANGE
@@ -126,8 +126,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when deleting a non-empty directory with the recursive argument set to true, the delete works.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteDirectoryWhenNotEmpty_WithForce()
         {
             // ARRANGE
@@ -149,8 +149,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that a data lake store can delete the directory which is set to be its root directory.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteDirectoryWhichIsRoot()
         {
             AzureDataLakeStore lakeWithNonRootDirectory = new AzureDataLakeStore("/deletemedir", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
@@ -164,8 +164,8 @@ namespace Watts.Azure.Tests
             lakeWithNonRootDirectory.PathExists(lakeWithNonRootDirectory.Directory).Should().Be(false, "because we have just deleted the directory and PathExists should now return false");
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteFile()
         {
             // ARRANGE
@@ -188,8 +188,8 @@ namespace Watts.Azure.Tests
             File.Delete(localFilepath);
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteFileOnDirectory_Fails()
         {
             string directoryname = "integrationtest_deletefileondirectory";
@@ -207,8 +207,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that invoking DeleteDirectory on a file throws an exception.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_DeleteDirectoryOnFile_Fails()
         {
             // ARRANGE
@@ -231,8 +231,8 @@ namespace Watts.Azure.Tests
             this.dataLake.DeleteDirectory(directoryname, true).Wait();
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_ConcatenateFiles()
         {
             // ARRANGE. Write two local files, upload them to the data lake store and prepare paths and filenames
@@ -272,8 +272,8 @@ namespace Watts.Azure.Tests
             File.Delete(downloadFileName);
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_AppendToFile()
         {
             // ARRANGE. Create file names and write the local file
@@ -309,8 +309,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that listing the contents of the root directory does not throw an exception.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("DataLake")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("DataLake")]
+        [Test]
         public void DataLake_ListDirectories()
         {
             Action action = () => this.dataLake.ListItems("/");

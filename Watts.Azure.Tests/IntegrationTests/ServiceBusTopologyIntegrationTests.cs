@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.Diagnostics;
@@ -9,10 +9,11 @@
     using Common.Security;
     using Common.ServiceBus.Management;
     using FluentAssertions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using NUnit.Framework;
     using Objects;
+    using Constants = Tests.Constants;
 
-    [TestClass]
+    [TestFixture]
     public class ServiceBusTopologyIntegrationTests
     {
         private TestEnvironmentConfig config;
@@ -21,7 +22,7 @@
 
         private IAzureActiveDirectoryAuthentication auth;
 
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.config = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment();
@@ -31,8 +32,8 @@
             this.auth = new AzureActiveDirectoryAuthentication(this.config.ServiceBusEnvironment.SubscriptionId, this.config.ServiceBusEnvironment.ResourceGroupName, credentials);
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("AzureBusTopology")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("AzureBusTopology")]
+        [Test]
         public void Topology_Emit_CreatesTopology()
         {
             int numberOfTopicSubscriptions = 300;
@@ -55,8 +56,8 @@
             topology.Destroy(true);
         }
 
-        [TestCategory("IntegrationTest"), TestCategory("AzureBusTopology"), TestCategory("LongRunning")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("AzureBusTopology"), Category("LongRunning")]
+        [Test]
         public void Topology_ThreeLevels_CreatedCorrectly()
         {
             // ARRANGE

@@ -1,17 +1,17 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.IO;
+    using Azure.Utils.Interfaces.Batch;
+    using Common.Storage.Objects;
     using FluentAssertions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Utils.Interfaces.Batch;
+    using NUnit.Framework;
+    using Objects;
 
     /// <summary>
     /// Tests related to storing and retrieving data in Azure.
     /// </summary>
-    [TestClass]
+    [TestFixture]
     public class AzureStorageIntegrationTests
     {
         private IBatchEnvironment environment;
@@ -19,7 +19,7 @@ namespace Watts.Azure.Tests
 
         private TestEnvironmentConfig config;
 
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.config = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment();
@@ -32,8 +32,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to store a blob (a text file) to the storage account being tested.
         /// </summary>
-        [TestMethod]
-        [TestCategory("IntegrationTest"), TestCategory("Azure Blob Storage")]
+        [Test]
+        [Category("IntegrationTest"), Category("Azure Blob Storage")]
         public void StoreBlob()
         {
             // ARRANGE
@@ -62,8 +62,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to upload a file to a file share in Azure.
         /// </summary>
-        [TestCategory("IntegrationTest"), TestCategory("Azure File Storage")]
-        [TestMethod]
+        [Category("IntegrationTest"), Category("Azure File Storage")]
+        [Test]
         public void TestUploadFile()
         {
             // ARRANGE

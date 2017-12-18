@@ -1,23 +1,22 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.UnitTests
 {
     using System;
     using System.Collections.Generic;
     using System.Threading;
+    using Common.Batch.Jobs;
+    using Common.Batch.Objects;
+    using Common.Interfaces.Batch;
+    using Common.Interfaces.General;
+    using Common.Interfaces.Wrappers;
+    using Common.Storage.Objects;
     using Microsoft.Azure.Batch;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Moq;
-    using Watts.Azure.Common.Batch.Jobs;
-    using Watts.Azure.Common.Batch.Objects;
-    using Watts.Azure.Common.Interfaces.Batch;
-    using Watts.Azure.Common.Interfaces.General;
-    using Watts.Azure.Common.Interfaces.Wrappers;
-    using Watts.Azure.Common.Storage.Objects;
-    using Watts.Azure.Tests.Utils;
+    using NUnit.Framework;
 
     /// <summary>
     /// Various unit tests of the BatchExecutionBase class.
     /// </summary>
-    [TestClass]
+    [TestFixture]
     public class BatchExecutionBaseUnitTests
     {
         private Mock<IBatchAccount> mockBatchAccount;
@@ -35,7 +34,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Create mocks of the dependencies of BatchExecutionBase and set up default stubs.
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             this.mockBatchAccount = new Mock<IBatchAccount>();
@@ -94,22 +93,22 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when the execution settings are invalid, an exception is thrown.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_SettingsAreInvalid_ThrowsExeption()
         {
             // ARRANGE: Stub isvalid to return false - this should cause an exception to be thrown.
             this.mockExecutionSettings.Setup(p => p.IsValid).Returns(false);
 
             // ACT AND ASSERT that an exception is thrown.
-            AssertHelper.Throws<AggregateException>(() => this.executionUnderTest.StartBatch().Wait());
+            Assert.Throws<AggregateException>(() => this.executionUnderTest.StartBatch().Wait());
         }
 
         /// <summary>
         /// Tests that when the settings are valid, the dependency resolver's Resolve method is invoked exactly once.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_SettingsAreValidAndContainersCreated_InvokesDependencyResolverExactlyOnce()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -125,8 +124,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when the settings are valid, the dependency resolver's Resolve method is invoked exactly once.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_SettingsAreValidAndContainersCreated_InvokesPrepareInputFilesOnce()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -143,8 +142,8 @@ namespace Watts.Azure.Tests
         /// Tests that when the settings are valid, the UploadFilesToContainerAsync method on the account is invoked exactly twice, once for application files
         /// and once for the input files.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_SettingsAreValidAndContainersCreated_UploadFilesToContainerAsyncTwice()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -161,8 +160,8 @@ namespace Watts.Azure.Tests
         /// Tests that when the settings are valid, the CreateContainerIfNotExistAsync method on the account is invoked exactly twice, once for application files
         /// and once for the input files.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_SettingsAreValidAndContainersCreated_CreateContainerIfNotExistAsyncTwice()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -179,8 +178,8 @@ namespace Watts.Azure.Tests
         /// Tests that when the CleanUpAfterwards property on the execution settings is true, the DeleteContainerAsyncIsInvoked method on the account is invoked exactly twice, once for application files
         /// and once for the input file containers.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsTrue_DeleteContainerAsyncIsInvokedTwice()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -197,8 +196,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when the CleanUpAfterwards property on the execution settings if FALSE, the DeleteContainerAsync method on the batch account is NOT invoked.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsFalse_DeleteContainerAsyncIsNotInvoked()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -224,8 +223,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when CleanUpAfterwards is true, the DeletePoolAsync method on the pool operations is invoked exactly once.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsTrue_DeletePoolAsyncInvokedExactlyOnce()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -242,8 +241,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when when CleanUpAfterwards is false, the DeletePoolAsync method on the pooloperations is never invoked.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsFalse_DeletePoolAsyncIsNeverInvoked()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -260,8 +259,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when CleanUpAfterwards is true, the DeleteJobAsync method on the job operations is invoked exactly once.
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsTrue_DeleteJobAsyncInvokedExactlyOnce()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.
@@ -278,8 +277,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that when CleanUpAfterwards is false, the DeleteJobAsync method on the account is never invoked
         /// </summary>
-        [TestMethod]
-        [TestCategory("UnitTest")]
+        [Test]
+        [Category("UnitTest")]
         public void ExecuteAsync_CleanUpSettingsAfterwardsFalse_DeleteJobAsyncIsNeverInvoked()
         {
             // ARRANGE: Ensure that the execution settings return valid, which makes sure execution doesn't halt directly.

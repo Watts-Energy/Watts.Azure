@@ -1,17 +1,18 @@
-namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests.IntegrationTests
 {
+    using Azure.Utils.Build;
+    using Azure.Utils.Interfaces.Batch;
+    using Common;
+    using Common.Storage.Objects.Wrappers;
     using FluentAssertions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-    using Watts.Azure.Common;
-    using Watts.Azure.Common.Storage.Objects.Wrappers;
-    using Watts.Azure.Tests.Objects;
-    using Watts.Azure.Utils.Build;
-    using Watts.Azure.Utils.Interfaces.Batch;
+    using NUnit.Framework;
+    using Objects;
+    using Constants = Tests.Constants;
 
     /// <summary>
     /// Various integration tests of batch.
     /// </summary>
-    [TestClass]
+    [TestFixture]
     public class ExecuteBatchIntegrationTests
     {
         /// <summary>
@@ -22,7 +23,7 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Setup the test by creating the environment.
         /// </summary>
-        [TestInitialize]
+        [SetUp]
         public void Setup()
         {
             // Set your environment here (i.e. create a class implementing IBatchEnvironment and instantiate it here.
@@ -35,8 +36,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to find a ubuntu image in the batch marketplace.
         /// </summary>
-        [TestMethod]
-        [TestCategory("IntegrationTest"), TestCategory("Linux")]
+        [Test]
+        [Category("IntegrationTest"), Category("Linux")]
         public void GetUbuntuBox_FindsImage()
         {
             // ARRANGE
@@ -54,8 +55,8 @@ namespace Watts.Azure.Tests
         /// <summary>
         /// Tests that it is possible to find a debian image in the batch marketplace.
         /// </summary>
-        [TestMethod]
-        [TestCategory("IntegrationTest"), TestCategory("Linux")]
+        [Test]
+        [Category("IntegrationTest"), Category("Linux")]
         public void GetDebian8Box_FindsImage()
         {
             // ARRANGE

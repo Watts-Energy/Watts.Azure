@@ -20,7 +20,7 @@ namespace Watts.Azure.Utils.Helpers.DataFactory
                 SourceLinkedServiceName = "SourceLinkedService",
                 TargetLinkedServiceName = "TargetLinkedService",
                 TargetDatasetName = "TargetDataset",
-                TimeoutInMinutes = 60
+                TimeoutInMinutes = 60,
             };
 
             return new DataCopyBuilderWithCopySetup(this, setup);

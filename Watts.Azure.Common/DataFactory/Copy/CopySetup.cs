@@ -39,5 +39,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// the directory that the data lake store points to is created.
         /// </summary>
         public bool CreateTargetIfNotExists { get; set; } = false;
+
+        public bool DeleteDataFactoryIfExists { get; set; } = false;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests
 {
     using System;
     using System.Collections.Generic;
@@ -33,7 +33,7 @@
                 this.dataLakeEnvironment.Credentials);
 
             // Create a data lake store with root /
-            this.dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+            this.dataLake = new AzureDataLakeStore(string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@
         {
             // ARRANGE
             string directoryName = "/integrationtest_datalake_createdirectory";
-            AzureDataLakeStore dataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+            AzureDataLakeStore dataLake = new AzureDataLakeStore(string.Empty, this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
 
             // Delete the directory if it exists...
             dataLake.DeleteDirectory(directoryName, true).Wait();
@@ -153,7 +153,7 @@
         [TestMethod]
         public void DataLake_DeleteDirectoryWhichIsRoot()
         {
-            AzureDataLakeStore lakeWithNonRootDirectory = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, "/deletemedir", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+            AzureDataLakeStore lakeWithNonRootDirectory = new AzureDataLakeStore("/deletemedir", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
 
             lakeWithNonRootDirectory.CreateDirectory(string.Empty).Wait();
 

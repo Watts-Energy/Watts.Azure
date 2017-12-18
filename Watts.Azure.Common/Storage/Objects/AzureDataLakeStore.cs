@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.Storage.Objects
+namespace Watts.Azure.Common.Storage.Objects
 {
     using System;
     using System.Collections.Generic;
@@ -14,34 +14,22 @@
 
     public class AzureDataLakeStore : IAzureDataLakeStore
     {
-        private IAzureActiveDirectoryAuthentication authenticator;
-        private DataLakeStoreAccountManagementClient client;
-        private DataLakeStoreFileSystemManagementClient fileSystemClient;
+        private readonly DataLakeStoreFileSystemManagementClient fileSystemClient;
 
-        public AzureDataLakeStore(string subscriptionId, string directory, string name, IAzureActiveDirectoryAuthentication authenticator)
+        public AzureDataLakeStore(string directory, string name, IAzureActiveDirectoryAuthentication authenticator)
         {
             this.Name = name;
             this.Directory = directory;
             this.ConnectionString = $"https://{this.Name}.azuredatalakestore.net/webhdfs/v1";
-            this.authenticator = authenticator;
+            this.Authenticator = authenticator;
 
             // Authenticate...
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             var serviceCredentials = authenticator.GetServiceCredentials();
-            this.client = new DataLakeStoreAccountManagementClient(serviceCredentials)
-            {
-                SubscriptionId = subscriptionId
-            };
             this.fileSystemClient = new DataLakeStoreFileSystemManagementClient(serviceCredentials);
         }
 
-        public IAzureActiveDirectoryAuthentication Authenticator
-        {
-            get
-            {
-                return this.authenticator;
-            }
-        }
+        public IAzureActiveDirectoryAuthentication Authenticator { get; }
 
         /// <summary>
         /// The name of the data lake store.

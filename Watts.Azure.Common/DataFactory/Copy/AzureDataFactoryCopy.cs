@@ -49,10 +49,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         public IAzureLinkedService SourceService
         {
-            get
-            {
-                return this.sourceService;
-            }
+            get => this.sourceService;
 
             set
             {
@@ -63,10 +60,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         public IAzureLinkedService TargetService
         {
-            get
-            {
-                return this.targetService;
-            }
+            get => this.targetService;
 
             set
             {
@@ -118,68 +112,17 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// <summary>
         /// Create the datasets for the source and sink.
         /// </summary>
-        /// <param name="sourceDatasetName"></param>
-        /// <param name="targetDatasetName"></param>
         /// <param name="dataStructure"></param>
         /// <returns></returns>
-        public bool CreateDatasets(string sourceDatasetName, string targetDatasetName, DataStructure dataStructure)
+        public bool CreateDatasets(DataStructure dataStructure)
         {
             var structure = dataStructure.DataElements;
 
             this.Report($"Creating source dataset with structure {string.Join(", ", structure.Select(p => p.Name))}");
-            var sourceResult = this.Client.Datasets.CreateOrUpdate(
-                this.factorySetup.ResourceGroupName,
-                this.factorySetup.Name,
-                new DatasetCreateOrUpdateParameters()
-                {
-                    Dataset = new Dataset()
-                    {
-                        Name = this.copySetup.SourceDatasetName,
-                        Properties = new DatasetProperties()
-                        {
-                            LinkedServiceName = this.copySetup.SourceLinkedServiceName,
-                            TypeProperties = this.datasetHelper.GetTypeProperties(this.SourceService),
-                            External = true,
-                            Availability = new Availability()
-                            {
-                                Frequency = SchedulePeriod.Day,
-                                Interval = 1,
-                            },
-                            Policy = new Policy()
-                            {
-                                Validation = new ValidationPolicy()
-                                {
-                                    MinimumRows = 1
-                                }
-                            },
-                            Structure = structure
-                        }
-                    }
-                });
+            var sourceResult = this.CreateSourceDataSet(structure);
 
             this.Report("Creating target dataset");
-            var targetResult = this.Client.Datasets.CreateOrUpdate(
-                this.factorySetup.ResourceGroupName,
-                this.factorySetup.Name,
-                new DatasetCreateOrUpdateParameters()
-                {
-                    Dataset = new Dataset()
-                    {
-                        Name = this.copySetup.TargetDatasetName,
-                        Properties = new DatasetProperties()
-                        {
-                            LinkedServiceName = this.copySetup.TargetLinkedServiceName,
-                            TypeProperties = this.datasetHelper.GetTypeProperties(this.TargetService, this.copySetup.TargetDatasetName),
-
-                            Availability = new Availability()
-                            {
-                                Frequency = SchedulePeriod.Day,
-                                Interval = 1,
-                            },
-                            Structure = structure
-                        },
-                    }
-                });
+            var targetResult = this.CreateTargetDataSet(structure);
 
             this.Report($"Source dataset creation status {sourceResult.Status}");
             this.Report($"Target dataset creation status {targetResult.Status}");
@@ -215,16 +158,21 @@ namespace Watts.Azure.Common.DataFactory.Copy
             return null;
         }
 
+        public bool DataFactoryExists()
+        {
+            var dataFactory = this.Client.DataFactories.Get(this.factorySetup.ResourceGroupName, this.factorySetup.Name);
+
+            return dataFactory.DataFactory != null;
+        }
+
         /// <summary>
         /// Create the copy data pipeline.
         /// </summary>
-        /// <param name="sourceDatasetName"></param>
-        /// <param name="targetDatasetName"></param>
         /// <param name="pipelineActivePeriodStartTime"></param>
         /// <param name="pipelineActivePeriodEndTime"></param>
-        public void CreatePipeline(string sourceDatasetName, string targetDatasetName, DateTime pipelineActivePeriodStartTime, DateTime pipelineActivePeriodEndTime)
+        public void CreatePipeline(DateTime pipelineActivePeriodStartTime, DateTime pipelineActivePeriodEndTime)
         {
-            this.Report($"Creating pipeline {sourceDatasetName} -> {targetDatasetName}...");
+            this.Report($"Creating pipeline {this.copySetup.SourceDatasetName} -> {this.copySetup.TargetDatasetName}...");
 
             this.Client.Pipelines.CreateOrUpdate(
                 this.factorySetup.ResourceGroupName,
@@ -249,13 +197,13 @@ namespace Watts.Azure.Common.DataFactory.Copy
                                 Name = Guid.NewGuid().ToString(),
                                 Inputs = new List<ActivityInput>()
                                 {
-                                    new ActivityInput() { Name = sourceDatasetName }
+                                    new ActivityInput() { Name = this.copySetup.SourceDatasetName }
                                 },
                                 Outputs = new List<ActivityOutput>()
                                 {
                                     new ActivityOutput()
                                     {
-                                        Name = targetDatasetName
+                                        Name = this.copySetup.TargetDatasetName
                                     }
                                 },
                                 TypeProperties = new CopyActivity()
@@ -394,7 +342,8 @@ namespace Watts.Azure.Common.DataFactory.Copy
         {
             var response = this.Client.DataFactories.Delete(this.factorySetup.ResourceGroupName, this.factorySetup.Name);
 
-            return response.StatusCode == HttpStatusCode.OK;
+            // If the status code is 200 or 204, the delete was successful (https://docs.microsoft.com/en-us/rest/api/datafactory/integrationruntimes/delete)
+            return response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent;
         }
 
         /// <summary>
@@ -433,6 +382,65 @@ namespace Watts.Azure.Common.DataFactory.Copy
         internal void Report(string progress)
         {
             this.progressDelegate?.Invoke(progress);
+        }
+
+        internal DatasetCreateOrUpdateResponse CreateTargetDataSet(List<DataElement> structure)
+        {
+            return this.Client.Datasets.CreateOrUpdate(
+                this.factorySetup.ResourceGroupName,
+                this.factorySetup.Name,
+                new DatasetCreateOrUpdateParameters()
+                {
+                    Dataset = new Dataset()
+                    {
+                        Name = this.copySetup.TargetDatasetName,
+                        Properties = new DatasetProperties()
+                        {
+                            LinkedServiceName = this.copySetup.TargetLinkedServiceName,
+                            TypeProperties = this.datasetHelper.GetTypeProperties(this.TargetService, this.copySetup.TargetDatasetName),
+
+                            Availability = new Availability()
+                            {
+                                Frequency = SchedulePeriod.Day,
+                                Interval = 1,
+                            },
+                            Structure = structure
+                        },
+                    }
+                });
+        }
+
+        internal DatasetCreateOrUpdateResponse CreateSourceDataSet(List<DataElement> structure)
+        {
+            return this.Client.Datasets.CreateOrUpdate(
+                this.factorySetup.ResourceGroupName,
+                this.factorySetup.Name,
+                new DatasetCreateOrUpdateParameters()
+                {
+                    Dataset = new Dataset()
+                    {
+                        Name = this.copySetup.SourceDatasetName,
+                        Properties = new DatasetProperties()
+                        {
+                            LinkedServiceName = this.copySetup.SourceLinkedServiceName,
+                            TypeProperties = this.datasetHelper.GetTypeProperties(this.SourceService),
+                            External = true,
+                            Availability = new Availability()
+                            {
+                                Frequency = SchedulePeriod.Day,
+                                Interval = 1,
+                            },
+                            Policy = new Policy()
+                            {
+                                Validation = new ValidationPolicy()
+                                {
+                                    MinimumRows = 1
+                                }
+                            },
+                            Structure = structure
+                        }
+                    }
+                });
         }
     }
 }

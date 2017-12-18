@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests
 {
     using System;
     using System.Diagnostics;
@@ -60,7 +60,7 @@
 
             int numberOfEntities = 10;
 
-            sourceTable.Insert(TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()));
+            sourceTable.Insert(TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()), null);
 
             // Perform the copy.
             DataCopyBuilder
@@ -92,7 +92,7 @@
         {
             // ARRANGE
             AzureTableStorage sourceTable = AzureTableStorage.Connect(this.environment.GetDataFactoryStorageAccountConnectionString(), "SourceTableDataLakeTest");
-            AzureDataLakeStore targetDataLake = new AzureDataLakeStore(this.dataLakeEnvironment.SubscriptionId, "/copydatatest", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
+            AzureDataLakeStore targetDataLake = new AzureDataLakeStore("/copydatatest", this.dataLakeEnvironment.DataLakeStoreName, this.dataLakeAuthentication);
 
             var deleted = sourceTable.DeleteIfExists();
             if (deleted)
@@ -103,7 +103,7 @@
 
             int numberOfEntities = 10;
 
-            sourceTable.Insert(TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()));
+            sourceTable.Insert(TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()), null);
 
             CopySetup setup = new CopySetup()
             {

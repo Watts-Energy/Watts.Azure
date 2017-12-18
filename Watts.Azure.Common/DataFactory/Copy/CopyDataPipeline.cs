@@ -64,11 +64,17 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         public void Start()
         {
+            if (this.setup.DeleteDataFactoryIfExists)
+            {
+                this.DeleteDataFactoryIfExists();
+            }
+
             var existingPipeline = this.dataFactory.PipelineExists();
             if (existingPipeline != null)
             {
                 this.Report("Pipeline already exists. Monitoring...");
-                this.dataFactory.MonitorStatusUntilDone(this.setup.TargetDatasetName, existingPipeline.Properties.Start.Value, existingPipeline.Properties.End.Value);
+                this.dataFactory.MonitorStatusUntilDone(this.setup.TargetDatasetName,
+                    existingPipeline.Properties.Start.Value, existingPipeline.Properties.End.Value);
             }
 
             if (this.setup.CreateTargetIfNotExists)
@@ -84,12 +90,13 @@ namespace Watts.Azure.Common.DataFactory.Copy
             this.dataFactory.LinkService(this.sourceService, this.setup.SourceLinkedServiceName);
             this.dataFactory.LinkService(this.targetService, this.setup.TargetLinkedServiceName);
 
-            this.dataFactory.CreateDatasets(this.sourceService.Name, this.targetService.Name, dataStructure);
+            this.dataFactory.CreateDatasets(dataStructure);
 
+            // TODO make these configurable
             DateTime pipelineActivePeriodStartTime = DateTime.Now.ToUniversalTime().AddHours(-100);
-            DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(200);
+            DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(2000);
 
-            this.dataFactory.CreatePipeline(this.setup.SourceDatasetName, this.setup.TargetDatasetName, pipelineActivePeriodStartTime, pipelineActivePeriodEndTime);
+            this.dataFactory.CreatePipeline(pipelineActivePeriodStartTime, pipelineActivePeriodEndTime);
             this.dataFactory.MonitorStatusUntilDone(this.setup.TargetDatasetName, pipelineActivePeriodStartTime, pipelineActivePeriodEndTime);
 
             this.Report("Waiting 20 seconds");
@@ -115,6 +122,14 @@ namespace Watts.Azure.Common.DataFactory.Copy
         internal void Report(string progress)
         {
             this.progressDelegate?.Invoke(progress);
+        }
+
+        internal void DeleteDataFactoryIfExists()
+        {
+            if (this.dataFactory.DataFactoryExists())
+            {
+                this.dataFactory.Delete();
+            }
         }
     }
 }

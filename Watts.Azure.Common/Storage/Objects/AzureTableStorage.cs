@@ -252,25 +252,29 @@ namespace Watts.Azure.Common.Storage.Objects
         /// </summary>
         /// <typeparam name="T">The entity type</typeparam>
         /// <param name="entities"></param>
-        public void Insert<T>(List<T> entities) where T : ITableEntity
+        public void Insert<T>(List<T> entities, Action<string> reportProgressAction = null) where T : ITableEntity
         {
             var table = this.CreateTableIfNotExists();
 
             // Divide the entities into batches and insert each batch.
             var batches = entities.ChunkBy(MaxEntitiesPerBatch);
 
+            int numberOfBatches = batches.Count;
+            int currentBatch = 0;
+
             batches.ForEach(p =>
             {
                 // Create the batch operation.
                 var batchOperation = new TableBatchOperation();
-
-                Console.WriteLine($"Going to insert {p.Count} entities");
 
                 // Add all entities to the batch insert operation.
                 p.ForEach(q => batchOperation.Insert(q));
 
                 // Execute the batch operation.
                 var result = table.ExecuteBatch(batchOperation);
+
+                reportProgressAction?.Invoke($"Processed {currentBatch} of {numberOfBatches} ({currentBatch * MaxEntitiesPerBatch} entities)");
+                currentBatch++;
             });
         }
 

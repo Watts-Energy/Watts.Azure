@@ -1,5 +1,6 @@
 namespace Watts.Azure.Common.Interfaces.Storage
 {
+    using System;
     using System.Collections.Generic;
     using DataFactory;
     using Microsoft.WindowsAzure.Storage.Table;
@@ -33,7 +34,8 @@ namespace Watts.Azure.Common.Interfaces.Storage
         /// </summary>
         /// <typeparam name="T">The entity type</typeparam>
         /// <param name="entity"></param>
-        void Insert<T>(List<T> entity) where T : ITableEntity;
+        /// <param name="reportProgressAction">An action to report progress on (optional)</param>
+        void Insert<T>(List<T> entity, Action<string> reportProgressAction = null) where T : ITableEntity;
 
         /// <summary>
         /// If the entity already exists, update it. Otherwise insert it.

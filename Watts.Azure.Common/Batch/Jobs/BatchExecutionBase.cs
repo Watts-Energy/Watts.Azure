@@ -377,7 +377,7 @@ namespace Watts.Azure.Common.Batch.Jobs
                                 this.account.BatchClient,
                                 this.Settings.BatchPoolSetup.JobId,
                                 this.account.ProgressDelegate,
-                                ReportPoolStatusFormat.GroupedByState);
+                                this.Settings.ReportStatusFormat);
 
             await monitor.StartMonitoring();
 

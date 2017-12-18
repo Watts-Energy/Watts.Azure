@@ -27,6 +27,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
             this.Log = parent.Log;
             this.OutputContainer = parent.OutputContainer;
             this.ProgressReportDelegate = parent.ProgressReportDelegate;
+            this.ReportStatusFormat = parent.ReportStatusFormat;
         }
 
         /// <summary>

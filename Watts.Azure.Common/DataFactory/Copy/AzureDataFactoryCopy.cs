@@ -135,6 +135,11 @@ namespace Watts.Azure.Common.DataFactory.Copy
         /// <returns></returns>
         public Pipeline PipelineExists()
         {
+            if (!this.DataFactoryExists())
+            {
+                return null;
+            }
+
             this.Report("Checking if pipeline exists...");
             PipelineListResponse pipeline = null;
 
@@ -160,9 +165,9 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
         public bool DataFactoryExists()
         {
-            var dataFactory = this.Client.DataFactories.Get(this.factorySetup.ResourceGroupName, this.factorySetup.Name);
+            var dataFactories = this.Client.DataFactories.List(this.factorySetup.ResourceGroupName);
 
-            return dataFactory.DataFactory != null;
+            return dataFactories.DataFactories.Any(p => p.Name == this.factorySetup.Name);
         }
 
         /// <summary>

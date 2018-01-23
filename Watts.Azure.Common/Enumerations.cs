@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common
+namespace Watts.Azure.Common
 {
     public enum LogLevel
     {
@@ -61,5 +61,11 @@
     {
         Json,
         Xml
+    }
+
+    public enum ScaleMode
+    {
+        Horizontally,
+        Vertically
     }
 }

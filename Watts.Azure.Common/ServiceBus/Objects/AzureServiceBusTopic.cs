@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.ServiceBus.Objects
+namespace Watts.Azure.Common.ServiceBus.Objects
 {
     using System;
     using System.Text.RegularExpressions;
@@ -43,6 +43,8 @@
                     this.topicSubscriptionName);
             }
         }
+
+        public bool IsInitialized => this.isInitialized;
 
         /// <summary>
         /// Create a new instance of AzureServiceBusTopic
@@ -119,6 +121,11 @@
         /// <param name="receiveMode"></param>
         public void Initialize(bool recreateSubscription, ReceiveMode receiveMode = ReceiveMode.PeekLock)
         {
+            if (this.isInitialized)
+            {
+                return;
+            }
+
             this.CreateTopicIfNotExists();
 
 

@@ -196,9 +196,13 @@
     <Compile Include="Security\AppActiveDirectoryAuthenticationCredentials.cs" />
     <Compile Include="Security\AzureActiveDirectoryAuthentication.cs" />
     <Compile Include="ServiceBus\Management\AzureServiceBusManagement.cs" />
+    <Compile Include="ServiceBus\Management\TopicScaler.cs" />
+    <Compile Include="ServiceBus\Management\TopicTopologyManager.cs" />
     <Compile Include="ServiceBus\Objects\AzureServiceBusTopic.cs" />
     <Compile Include="ServiceBus\Objects\AzureServiceBusTopicInfo.cs" />
     <Compile Include="ServiceBus\Management\AzureServiceBusTopology.cs" />
+    <Compile Include="ServiceBus\Objects\AzureServiceBusTopicSubscriptionInfo.cs" />
+    <Compile Include="ServiceBus\Objects\TopicAssignmentInfo.cs" />
     <Compile Include="Storage\Objects\AzureBlobStorage.cs" />
     <Compile Include="Storage\Objects\AzureDataLakeStore.cs" />
     <Compile Include="Storage\Objects\AzureDocumentDb.cs" />

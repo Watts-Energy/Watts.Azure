@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.DataFactory.General
+namespace Watts.Azure.Common.DataFactory.General
 {
     using System;
     using Microsoft.Azure.Management.DataFactories.Models;
@@ -51,7 +51,7 @@
                 return dataLakeSource;
             }
 
-            throw new NotImplementedException($"Getting copy source has not been implmemented for {service.GetType().Name}");
+            throw new NotImplementedException($"Getting copy source has not been implemented for {service.GetType().Name}");
         }
 
         public CopySink GetCopySink(IAzureLinkedService service)

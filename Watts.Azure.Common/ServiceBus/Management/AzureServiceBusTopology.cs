@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.ServiceBus.Management
+namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System;
     using System.Collections.Generic;
@@ -15,7 +15,7 @@
     /// It is possible to specify the maximum number of subscribers that should be allowed. At the time of writing, the hard limit in Azure is 2000 subscriptions per topic,
     /// but this could change in the future so no hard limit is enforced here.
     /// </summary>
-    public class AzureServiceBusTopology
+    public class AzureServiceBusTopology : ICloneable
     {
         /// <summary>
         /// The number of times that we should retry when Azure service bus management throws an error
@@ -40,7 +40,7 @@
         /// <summary>
         /// The name of the topic
         /// </summary>
-        private readonly string topicName;
+        private string topicName;
 
         /// <summary>
         /// The root of the topology. This represents the root topic.
@@ -92,6 +92,15 @@
             // Create the management client for CRUD operations on namespaces and topics
             this.management = serviceBusManagement;
         }
+
+        public string TopicName
+        {
+            get => this.topicName;
+            set => this.topicName = value;
+        }
+
+
+        public int MaxSubscribersPerTopic => this.maxSubscribersPerTopic;
 
         /// <summary>
         /// Get or set the total number of nodes.
@@ -446,6 +455,13 @@
         internal void Report(string progress)
         {
             this.reportAction?.Invoke(progress);
+        }
+
+        public object Clone()
+        {
+            AzureServiceBusTopology clone = new AzureServiceBusTopology(this.rootNamespaceName, this.topicName, this.management, this.location, this.maxSubscribersPerTopic);
+
+            return clone;
         }
     }
 }

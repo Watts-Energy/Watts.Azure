@@ -128,7 +128,7 @@ namespace Watts.Azure.Common.Batch.Objects
 
             groupedByState.ToList().ForEach(p =>
             {
-                this.Report($"{p.First().State}:{tabSeparator}{p.Count()} nodes");
+                this.Report($"{p.First().State}:{tabSeparator}{p.Count()} tasks");
             });
 
             this.Report("################");

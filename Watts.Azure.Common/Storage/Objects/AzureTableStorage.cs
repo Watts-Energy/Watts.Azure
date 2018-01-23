@@ -191,7 +191,7 @@ namespace Watts.Azure.Common.Storage.Objects
             retVal.AddDefaultKeyStructure(partitionKeyType, rowKeyType);
 
             var table = this.GetTableReference();
-            var query = new TableQuery().Take(10);
+            var query = new TableQuery().Take(1000);
 
             var entities = table.ExecuteQuery(query).ToList();
 

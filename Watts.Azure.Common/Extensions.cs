@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common
+namespace Watts.Azure.Common
 {
     using System;
     using System.Collections.Generic;
@@ -8,6 +8,7 @@
     using System.Text;
     using General.Serialization;
     using Microsoft.ServiceBus.Messaging;
+    using ServiceBus.Objects;
 
     public static class Extensions
     {
@@ -141,6 +142,17 @@
             {
                 return message.GetBody<T>();
             }
+        }
+
+        public static AzureServiceBusTopic ToTopicInstance(this AzureServiceBusTopicInfo topicInfo)
+        {
+            return new AzureServiceBusTopic(topicInfo.Name, "not-to-be-used", topicInfo.PrimaryConnectionString);
+        }
+
+        public static AzureServiceBusTopic ToTopicInstance(
+            this AzureServiceBusTopicSubscriptionInfo topicSubscriptionInfo)
+        {
+            return new AzureServiceBusTopic(topicSubscriptionInfo.Name, topicSubscriptionInfo.SubscriptionName, topicSubscriptionInfo.PrimaryConnectionString);
         }
     }
 }

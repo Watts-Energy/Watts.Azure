@@ -194,7 +194,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
                             // Initial value for pipeline's active period. With this, you won't need to set slice status
                             Start = pipelineActivePeriodStartTime,
                             End = pipelineActivePeriodEndTime,
-
+                            
                             Activities = new List<Activity>()
                         {
                             new Activity()
@@ -208,13 +208,14 @@ namespace Watts.Azure.Common.DataFactory.Copy
                                 {
                                     new ActivityOutput()
                                     {
-                                        Name = this.copySetup.TargetDatasetName
+                                        Name = this.copySetup.TargetDatasetName,
                                     }
                                 },
                                 TypeProperties = new CopyActivity()
                                 {
                                     Source = this.source,
-                                    Sink = this.sink
+                                    Sink = this.sink,
+                                    CloudDataMovementUnits = 8
                                 }
                             }
                         },
@@ -253,17 +254,19 @@ namespace Watts.Azure.Common.DataFactory.Copy
                             DataSliceRangeEndTime = pipelineActivePeriodEndTime.ConvertToISO8601DateTimeString()
                         });
 
+                    done = true;
+
                     foreach (DataSlice slice in datalistResponse.DataSlices)
                     {
                         if (slice.State == DataSliceState.Failed || slice.State == DataSliceState.Ready)
                         {
                             this.Report($"Slice execution is done with status: {slice.State}");
-                            done = true;
                             break;
                         }
                         else
                         {
                             this.Report($"Slice status is: {slice.State}");
+                            done = false;
                         }
                     }
 

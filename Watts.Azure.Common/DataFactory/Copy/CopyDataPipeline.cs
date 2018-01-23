@@ -94,7 +94,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
 
             // TODO make these configurable
             DateTime pipelineActivePeriodStartTime = DateTime.Now.ToUniversalTime().AddHours(-100);
-            DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(2000);
+            DateTime pipelineActivePeriodEndTime = pipelineActivePeriodStartTime.AddMinutes(1);
 
             this.dataFactory.CreatePipeline(pipelineActivePeriodStartTime, pipelineActivePeriodEndTime);
             this.dataFactory.MonitorStatusUntilDone(this.setup.TargetDatasetName, pipelineActivePeriodStartTime, pipelineActivePeriodEndTime);

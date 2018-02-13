@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.ServiceBus.Management
+namespace Watts.Azure.Common.ServiceBus.Management
 {
     using System;
     using System.Collections.Generic;

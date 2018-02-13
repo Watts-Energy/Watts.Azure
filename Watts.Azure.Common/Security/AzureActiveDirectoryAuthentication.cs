@@ -10,39 +10,20 @@ namespace Watts.Azure.Common.Security
     public class AzureActiveDirectoryAuthentication : IAzureActiveDirectoryAuthentication
     {
         private readonly string subscriptionId;
-        private readonly string resourceGroupName;
         private readonly AppActiveDirectoryAuthenticationCredentials credentials;
 
         public AzureActiveDirectoryAuthentication(string subscriptionId, string resourceGroupName, AppActiveDirectoryAuthenticationCredentials credentials)
         {
             this.subscriptionId = subscriptionId;
-            this.resourceGroupName = resourceGroupName;
+            this.ResourceGroupName = resourceGroupName;
             this.credentials = credentials;
         }
 
-        public string SubscriptionId
-        {
-            get
-            {
-                return this.subscriptionId;
-            }
-        }
+        public string SubscriptionId => this.subscriptionId;
 
-        public string ResourceGroupName
-        {
-            get
-            {
-                return this.resourceGroupName;
-            }
-        }
+        public string ResourceGroupName { get; }
 
-        public AppActiveDirectoryAuthenticationCredentials Credentials
-        {
-            get
-            {
-                return this.credentials;
-            }
-        }
+        public AppActiveDirectoryAuthenticationCredentials Credentials => this.credentials;
 
         public string GetAuthorizationToken()
         {
@@ -64,11 +45,6 @@ namespace Watts.Azure.Common.Security
 
         public ServiceClientCredentials GetServiceCredentials()
         {
-            string tenantId = this.credentials.TenantId;
-
-            string managementEndpoint = Constants.WindowsManagementUri;
-
-            var authenticationContext = new AuthenticationContext($"{Constants.ActiveDirectoryEndpoint}/{tenantId}");
             ClientCredential credential = new ClientCredential(this.credentials.ClientId, this.credentials.ClientSecret);
             var creds = ApplicationTokenProvider.LoginSilentAsync(this.credentials.TenantId, credential);
 

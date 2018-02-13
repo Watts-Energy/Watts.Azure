@@ -29,11 +29,6 @@ namespace Watts.Azure.Common.ServiceBus.Management
         public TopicScaler(string rootNamespace, string topicName, IAzureServiceBusManagement serviceBusManagement,
             AzureLocation location, int numberOfSubscribersPerInstance, int maxSubscribersPerTopic = 2000, ScaleMode scaleMode = ScaleMode.Vertically, bool autoEmitTopologies = true)
         {
-            if (scaleMode == ScaleMode.Horizontally && numberOfSubscribersPerInstance > maxSubscribersPerTopic)
-            {
-                throw new ArgumentException("When scaleMode is horizontal, numberOfSubscribersPerInstance must be <= maxSubscribersPerTopic");
-            }
-
             this.rootNamespace = rootNamespace;
             this.topicName = topicName;
             this.serviceBusManagement = serviceBusManagement;
@@ -43,7 +38,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
             this.scaleMode = scaleMode;
             this.autoEmitTopologies = autoEmitTopologies;
 
-            this.verticalScalingManager = scaleMode == ScaleMode.Vertically ? new TopicTopologyManager(this.GetTopology()) : null;
+            this.verticalScalingManager = scaleMode == ScaleMode.Vertically ? new TopicTopologyManager(this.GetNextTopology()) : null;
             this.horizontalScalingManagers = scaleMode == ScaleMode.Horizontally ? new List<TopicTopologyManager>() : null;
         }
 
@@ -63,13 +58,25 @@ namespace Watts.Azure.Common.ServiceBus.Management
                 {
                     this.horizontalScalingManagers = new List<TopicTopologyManager>()
                     {
-                        new TopicTopologyManager(this.GetTopology())
+                        new TopicTopologyManager(this.GetNextTopology())
                     };
                 }
 
                 // Select a random of the horizontally scaled topic topologies, so as to distribute the load on them.
                 int randomIndex = this.rand.Next(this.horizontalScalingManagers.Count);
                 return this.horizontalScalingManagers[randomIndex].GetRootTopicInfo();
+            }
+        }
+
+        public List<AzureServiceBusTopicInfo> GetAllBroadcastTopics()
+        {
+            if (this.scaleMode == ScaleMode.Vertically)
+            {
+                return new List<AzureServiceBusTopicInfo>() {this.verticalScalingManager.GetRootTopicInfo()};
+            }
+            else
+            {
+                return this.horizontalScalingManagers.Select(p => p.GetRootTopicInfo()).ToList();
             }
         }
 
@@ -88,7 +95,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
             else
             {
                 // We're meant to scale horizontally.
-                // That means we should create new topic is created when the previous topic is full, and only a one-depth topology is supported.
+                // That means a new topic is created when the previous topic is full, and only a one-depth topology is supported.
                 // First, check if we either don't have any managers, or the last one is full (we only add new ones once the previous is full,
                 // so all previous topic subscriptions will be full)
                 // If so, create one...
@@ -96,7 +103,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
                 {
                     this.horizontalScalingManagers = new List<TopicTopologyManager>()
                     {
-                        new TopicTopologyManager(this.GetTopology())
+                        new TopicTopologyManager(this.GetNextTopology())
                     };
                 }
 
@@ -104,15 +111,22 @@ namespace Watts.Azure.Common.ServiceBus.Management
             }
         }
 
-        internal AzureServiceBusTopology GetTopology()
+        internal AzureServiceBusTopology GetNextTopology()
         {
-            AzureServiceBusTopology retVal = new AzureServiceBusTopology(this.rootNamespace, this.topicName, this.serviceBusManagement, this.location, this.maxSubscribersPerInstance);
-            retVal.GenerateBusTopology(this.numberOfSubscribersPerInstance);
+            string nextTopicName = this.scaleMode == ScaleMode.Vertically ? this.topicName : $"{this.topicName}-{this.horizontalScalingManagers.Count + 1}";
+
+            int numberOfSubscribers = this.scaleMode == ScaleMode.Vertically
+                ? this.numberOfSubscribersPerInstance
+                : this.maxSubscribersPerInstance;
+
+            AzureServiceBusTopology retVal = new AzureServiceBusTopology(this.rootNamespace, nextTopicName, this.serviceBusManagement, this.location, this.maxSubscribersPerInstance);
+            retVal.GenerateBusTopology(numberOfSubscribers);
 
             if (this.autoEmitTopologies)
             {
                 retVal.Emit();
             }
+
 
             return retVal;
         }

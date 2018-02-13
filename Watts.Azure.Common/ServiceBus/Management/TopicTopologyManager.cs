@@ -18,9 +18,6 @@ namespace Watts.Azure.Common.ServiceBus.Management
         /// Create a manager that handles the assignment of topic subscriptions to callers, based on the scale mode.
         /// </summary>
         /// <param name="topology">The topology, which may be duplicated if the scaleMode is Horizontal (see scaleMode)</param>
-        /// <param name="scaleMode">The scale mode. In the case of Vertical scaling, the topology specifies the tota number of subscriptions needed, and all subscriptions are created at the leaf level. To send something on the bus, send it on the root level, and it wil be sent to all leaf subscriptions. 
-        ///  If, however, the scale mode is Horizontal, it means that the topology is just one of possibly many instances needed, and that the topology should be duplicated. 
-        /// This will typically be needed if you want multiple processors to process a single topic, in which case they must listen on the same subscription. The only way to scale beyond the built-in subscription limit is then to create other topics and provide each sender with a different root node.</param>
         public TopicTopologyManager(AzureServiceBusTopology topology)
         {
             this.topology = topology;
@@ -34,6 +31,9 @@ namespace Watts.Azure.Common.ServiceBus.Management
             return this.topology.GetRootTopic();
         }
 
+        /// <summary>
+        /// We're full if we've assigned all the endpoints we've created.
+        /// </summary>
         public bool IsFull => this.assignments.Count == 0;
 
         public AzureServiceBusTopicSubscriptionInfo GetTopicSubcriptionInfo()
@@ -45,7 +45,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
 
             var firstAvailable = this.assignments[0];
 
-            AzureServiceBusTopicSubscriptionInfo retVal = new AzureServiceBusTopicSubscriptionInfo(this.topology.TopicName, firstAvailable.TopicInfo.PrimaryConnectionString, $"{firstAvailable.TopicInfo.Name}-{firstAvailable.NumberOfSubscriptionsCreated}");
+            AzureServiceBusTopicSubscriptionInfo retVal = new AzureServiceBusTopicSubscriptionInfo(firstAvailable.TopicInfo.Name, firstAvailable.TopicInfo.PrimaryConnectionString, $"{firstAvailable.TopicInfo.Name}-{firstAvailable.NumberOfSubscriptionsCreated}");
 
             firstAvailable.NumberOfSubscriptionsCreated++;
 

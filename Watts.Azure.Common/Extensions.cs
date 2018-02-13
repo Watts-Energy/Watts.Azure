@@ -154,5 +154,36 @@ namespace Watts.Azure.Common
         {
             return new AzureServiceBusTopic(topicSubscriptionInfo.Name, topicSubscriptionInfo.SubscriptionName, topicSubscriptionInfo.PrimaryConnectionString);
         }
+
+        /// <summary>
+        /// Construct an instance of a topic from info about the topic, and make the instance type of a type that inherits from AzureServiceBusTopic
+        /// </summary>
+        /// <typeparam name="T">Type that inherits from AzureServiceBusTopicInfo</typeparam>
+        /// <param name="topicInfo"></param>
+        /// <returns></returns>
+        public static T GetInstance<T>(this AzureServiceBusTopicInfo topicInfo) where T : AzureServiceBusTopic
+        {
+            object[] constructorArguments = { topicInfo.Name, "not-to-be-used", topicInfo.PrimaryConnectionString };
+
+            T instance = (T)Activator.CreateInstance(typeof(T), constructorArguments);
+
+            return instance;
+        }
+
+        /// <summary>
+        /// Construct an instance of a topic from info about the subscription, and make the instance type of a type that inherits from AzureServiceBusTopic
+        /// </summary>
+        /// <typeparam name="T">Type that inherits from AzureServiceBusTopicInfo</typeparam>
+        /// <param name="topicSubscriptionInfo"></param>
+        /// <returns></returns>
+        public static T GetInstance<T>(
+            this AzureServiceBusTopicSubscriptionInfo topicSubscriptionInfo) where T : AzureServiceBusTopic
+        {
+            object[] constructorArguments = { topicSubscriptionInfo.Name, topicSubscriptionInfo.SubscriptionName, topicSubscriptionInfo.PrimaryConnectionString };
+
+            T instance = (T)Activator.CreateInstance(typeof(T), constructorArguments);
+
+            return instance;
+        }
     }
 }

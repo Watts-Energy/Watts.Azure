@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Utils.Interfaces.DataFactory
+namespace Watts.Azure.Utils.Interfaces.DataFactory
 {
     using Common.Security;
     using Watts.Azure.Common.DataFactory.General;

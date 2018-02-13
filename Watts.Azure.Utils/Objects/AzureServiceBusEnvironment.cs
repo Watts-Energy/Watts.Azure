@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Utils.Objects
+namespace Watts.Azure.Utils.Objects
 {
     using Common;
     using Common.Security;

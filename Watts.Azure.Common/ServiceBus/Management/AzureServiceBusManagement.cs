@@ -83,6 +83,13 @@ namespace Watts.Azure.Common.ServiceBus.Management
         /// <returns></returns>
         public SBNamespace CreateOrUpdateNamespace(string namespaceName, AzureLocation location)
         {
+            var existingNamespaces = this.managementClient.Namespaces.List();
+
+            if (existingNamespaces.Select(p => p.Name).Contains(namespaceName))
+            {
+                return existingNamespaces.SingleOrDefault(p => p.Name == namespaceName);
+            }
+
             var namespaceParams = new SBNamespace
             {
                 Location = location.ToString(),

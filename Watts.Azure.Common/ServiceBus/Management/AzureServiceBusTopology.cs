@@ -193,6 +193,43 @@ namespace Watts.Azure.Common.ServiceBus.Management
             return this.rootNode.FlattenNodes().Where(p => p.IsLeaf);
         }
 
+        public IEnumerable<AzureServiceBusTopicSubscriptionInfo> GenerateLeafSubscriptions(int numberOfSubscriptions)
+        {
+            List<AzureServiceBusTopicSubscriptionInfo> retVal = new List<AzureServiceBusTopicSubscriptionInfo>();
+
+            int numberOfLeafNodes = this.GetLeafNodes().Count();
+
+            int subscriptionsPerLeaf = (int) Math.Ceiling((double) numberOfSubscriptions / numberOfLeafNodes);
+
+            foreach (var leaf in this.GetLeafNodes())
+            {
+                for (int i = 0; i < subscriptionsPerLeaf; i++)
+                {
+                    string subscriptionName = $"sub-{leaf.Value.Name}-{i + 1}";
+
+                    Retry.Do(() =>
+                        {
+                            try
+                            {
+                                retVal.Add(new AzureServiceBusTopicSubscriptionInfo(leaf.Value.Name, leaf.Value.PrimaryConnectionString, subscriptionName));
+                                return true;
+                            }
+                            catch (Exception ex)
+                            {
+                                return false;
+                            }
+                        })
+                        .WithRandomDelay(MillisecondDelayBetweenAttemptsOnFailure, 4 * MillisecondDelayBetweenAttemptsOnFailure)
+                        .MaxTimes(NumberOfRetriesOnFailure)
+                        .Go();
+
+                    
+                }
+            }
+
+            return retVal;
+        }
+
         public AzureServiceBusTopicInfo GetRootTopic()
         {
             return this.rootNode.Value;
@@ -263,6 +300,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
             if (this.rootNode.Children.Count == 0)
             {
                 // There are no children, so no forwarding is neccessary
+
                 return;
             }
 

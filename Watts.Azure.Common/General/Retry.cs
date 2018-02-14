@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.General
+namespace Watts.Azure.Common.General
 {
     using System;
     using System.Collections.Generic;
@@ -72,13 +72,12 @@
                     }
                 }
 
-                // If we've retried too many times, return false
+                // If we've retried too many times, return false.
                 if (this.numberOfRetries >= this.maxRetries)
                 {
                     return false;
                 }
-                else
-                {
+                else {
                     // Reset numberOfRetries
                     this.numberOfRetries = 0;
                 }

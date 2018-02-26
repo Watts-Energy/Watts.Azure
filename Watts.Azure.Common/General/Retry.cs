@@ -77,10 +77,9 @@ namespace Watts.Azure.Common.General
                 {
                     return false;
                 }
-                else {
-                    // Reset numberOfRetries
-                    this.numberOfRetries = 0;
-                }
+                
+                // Reset numberOfRetries
+                this.numberOfRetries = 0;
             }
 
             return retVal;

@@ -8,7 +8,11 @@ namespace Watts.Azure.Common.Interfaces.ServiceBus
     {
         bool IsInitialized { get; }
 
-        void Initialize(bool recreateSubscription, ReceiveMode receiveMode = ReceiveMode.PeekLock);
+        string TopicName { get; }
+
+        string TopicSubscriptionName { get; }
+
+        void Initialize(bool recreateSubscription);
 
         Task SendMessageAsync(object messageObject);
 

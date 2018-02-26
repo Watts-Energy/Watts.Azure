@@ -313,8 +313,7 @@ namespace Watts.Azure.Common.Batch.Jobs
             if (this.Settings.CleanupAfterwards)
             {
                 this.Report("Cleaning up after batch run...");
-                this.Report(
-                    $"Deleting container {this.Settings.ExecutableInfos.First().BatchExecutableContainerName}");
+                this.Report($"Deleting container {this.Settings.ExecutableInfos.First().BatchExecutableContainerName}");
 
                 // Clean up Storage resources
                 try
@@ -333,8 +332,7 @@ namespace Watts.Azure.Common.Batch.Jobs
 
                 try
                 {
-                    await
-                        this.account.DeleteContainerAsync(this.blobClient, this.Settings.ExecutableInfos.First().BatchInputContainerName);
+                    await this.account.DeleteContainerAsync(this.blobClient, this.Settings.ExecutableInfos.First().BatchInputContainerName);
                 }
                 catch (Exception ex)
                 {

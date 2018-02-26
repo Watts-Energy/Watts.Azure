@@ -27,7 +27,7 @@ namespace Watts.Azure.Common.ServiceBus.Management
         private bool autoEmitTopologies;
 
         public TopicScaler(string rootNamespace, string topicName, IAzureServiceBusManagement serviceBusManagement,
-            AzureLocation location, int numberOfSubscribersPerInstance, int maxSubscribersPerTopic = 2000, ScaleMode scaleMode = ScaleMode.Vertically, bool autoEmitTopologies = true)
+            AzureLocation location, int numberOfSubscribersPerInstance, int maxSubscribersPerTopic = 2000, ScaleMode scaleMode = ScaleMode.Vertically, bool autoEmitTopologies = true, bool recreateTopics = false)
         {
             this.rootNamespace = rootNamespace;
             this.topicName = topicName;
@@ -37,10 +37,13 @@ namespace Watts.Azure.Common.ServiceBus.Management
             this.maxSubscribersPerInstance = maxSubscribersPerTopic;
             this.scaleMode = scaleMode;
             this.autoEmitTopologies = autoEmitTopologies;
+            this.RecreateTopics = recreateTopics;
 
             this.verticalScalingManager = scaleMode == ScaleMode.Vertically ? new TopicTopologyManager(this.GetNextTopology()) : null;
             this.horizontalScalingManagers = scaleMode == ScaleMode.Horizontally ? new List<TopicTopologyManager>() : null;
         }
+
+        public bool RecreateTopics { get; set; } = false;
 
         /// <summary>
         /// Get a topic info suitable for sending messages on the topic (one that is at the root of the topology)
@@ -119,6 +122,11 @@ namespace Watts.Azure.Common.ServiceBus.Management
                 ? this.numberOfSubscribersPerInstance
                 : this.maxSubscribersPerInstance;
 
+            if (this.RecreateTopics)
+            {
+                this.serviceBusManagement.DeleteTopic(this.rootNamespace, nextTopicName);
+            }
+
             AzureServiceBusTopology retVal = new AzureServiceBusTopology(this.rootNamespace, nextTopicName, this.serviceBusManagement, this.location, this.maxSubscribersPerInstance);
             retVal.GenerateBusTopology(numberOfSubscribers);
 
@@ -126,7 +134,6 @@ namespace Watts.Azure.Common.ServiceBus.Management
             {
                 retVal.Emit();
             }
-
 
             return retVal;
         }

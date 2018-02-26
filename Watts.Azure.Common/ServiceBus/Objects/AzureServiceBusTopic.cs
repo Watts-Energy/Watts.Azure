@@ -46,6 +46,10 @@ namespace Watts.Azure.Common.ServiceBus.Objects
 
         public bool IsInitialized => this.isInitialized;
 
+        public string TopicName => this.topicName;
+
+        public string TopicSubscriptionName => this.topicSubscriptionName;
+
         /// <summary>
         /// Create a new instance of AzureServiceBusTopic
         /// </summary>
@@ -119,7 +123,7 @@ namespace Watts.Azure.Common.ServiceBus.Objects
         /// </summary>
         /// <param name="recreateSubscription"></param>
         /// <param name="receiveMode"></param>
-        public void Initialize(bool recreateSubscription, ReceiveMode receiveMode = ReceiveMode.PeekLock)
+        public void Initialize(bool recreateSubscription)
         {
             if (this.isInitialized)
             {
@@ -127,7 +131,6 @@ namespace Watts.Azure.Common.ServiceBus.Objects
             }
 
             this.CreateTopicIfNotExists();
-
 
             this.CreateSubscriptionIfDoesntExist(recreateSubscription);
 

@@ -1,5 +1,6 @@
 namespace Watts.Azure.Utils.Helpers.Batch
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -18,8 +19,8 @@ namespace Watts.Azure.Utils.Helpers.Batch
     {
         private BatchExecutableInfo executableInfo = new BatchExecutableInfo()
         {
-            BatchExecutableContainerName = "application",
-            BatchInputContainerName = "input"
+            BatchExecutableContainerName = $"application-{Guid.NewGuid()}",
+            BatchInputContainerName = $"input-{Guid.NewGuid()}"
         };
 
         public ExecutableBatchCreation(BatchCreationWithInputPreparation parent, string executableFilePath)

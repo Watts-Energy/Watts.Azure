@@ -1,5 +1,6 @@
 namespace Watts.Azure.Common.Storage.Objects
 {
+    using System.Threading.Tasks;
     using Microsoft.WindowsAzure.Storage;
 
     /// <summary>
@@ -13,9 +14,14 @@ namespace Watts.Azure.Common.Storage.Objects
             this.Name = tableName;
         }
 
-        public void SaveStatistic(BatchStatisticsEntity statistic)
+        public void SaveStatistics(BatchStatisticsEntity statistic)
         {
             this.Insert(statistic);
+        }
+
+        public async Task SaveStatisticsAsync(BatchStatisticsEntity statistics)
+        {
+            await this.InsertAsync(statistics);
         }
     }
 }

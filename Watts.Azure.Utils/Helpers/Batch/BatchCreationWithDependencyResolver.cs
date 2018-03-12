@@ -21,7 +21,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
         public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, IBatchDependencyResolver dependencyResolver)
             : base(parent, parent.StorageAccountSettings)
         {
-            this.DependencyResolvers = new List<IBatchDependencyResolver>() { dependencyResolver };
+            this.DependencyResolvers = dependencyResolver == null ? new List<IBatchDependencyResolver>() : new List<IBatchDependencyResolver>() { dependencyResolver };
         }
 
         public BatchCreationWithDependencyResolver(BatchCreationWithBatchAndStorageAccountSettings parent, List<IBatchDependencyResolver> dependencyResolvers)

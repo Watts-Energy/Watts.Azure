@@ -36,7 +36,6 @@ namespace Watts.Azure.Tests.UnitTests
             var constructedCommand = testSubject.ConstructCommand(
                     new List<BatchConsoleCommand>() { command },
                     resourceFile,
-                    null,
                     OperatingSystemFamily.Windows);
 
             // ASSERT
@@ -75,7 +74,6 @@ namespace Watts.Azure.Tests.UnitTests
             var constructedCommand = testSubject.ConstructCommand(
                     new List<BatchConsoleCommand>() { command, command2 },
                     resourceFile,
-                    null,
                     OperatingSystemFamily.Windows);
 
             // ASSERT
@@ -120,7 +118,6 @@ namespace Watts.Azure.Tests.UnitTests
             var constructedCommand = testSubject.ConstructCommand(
                         new List<BatchConsoleCommand>() { command, command2 },
                         resourceFile,
-                        null,
                         OperatingSystemFamily.Windows);
 
             // ASSERT

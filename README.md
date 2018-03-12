@@ -1,19 +1,19 @@
 # Introduction
 
-The reason that Watts.Azure exists is, that we found that working with Azure Batch from .NET (especially to execute R code) seemed needlessly cumbersome and required you to write a lot of boilerplate code.
-We wanted create a simple interface to Azure Batch for those of us who do not need to know the details but would like to take advantage of the massive potential for scaling compute that it offers.
+Watts.Azure exists primarily to make working with Azure Batch from .NET (especially to execute R code) easier. We found it needlessly cumbersome using the existing APIs and that it required you to write a lot of boilerplate code.
+We want to create a simple interface to Azure Batch for those of us who do not need to know all the details but would like to take advantage of the massive potential for scaling compute that it offers.
 
-**Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/) without 
-having to know all the details and coding everything yourself. 
+**Watts.Azure** provides utilities to e.g. run parallel computations implemented in, for instance, *R*, *C#* or *python* in [Azure Batch](https://azure.microsoft.com/en-us/services/batch/).
+
 In addition, it contains utilities to make aspects of working with [Azure Data Factory](https://azure.microsoft.com/en-us/services/data-factory/), [Azure Table Storage](https://azure.microsoft.com/en-us/services/storage/tables/), 
 [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/), [Azure File Storage](https://azure.microsoft.com/en-us/services/storage/files/), [Azure Data Lake Store](https://azure.microsoft.com/en-us/services/data-lake-store/) and [Azure Service Bus Topics](https://azure.microsoft.com/en-us/services/service-bus/) easier.
 
 Watts.Azure provides, among other things, a fluid interface that makes it simple to work with Azure Batch from .NET without dealing with all the low-level details. 
 It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
 
-It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities).
+It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities). In particular, it is convenient for creating backups, which can even be incremental, where you only copy the data that is not already present in an existing backup storage.
 
-Some tools for working with Azure Table Storage, Azure Blob Storage, Azure Service Bus Topics and Azure Data Factory are also implemented.
+Some tools for working directly with Azure Table Storage, Azure Blob Storage, Azure Service Bus Topics and Azure Data Factory are also implemented.
 
 Be sure to check out the Issues section and feel free to add feature suggestions.
 
@@ -70,7 +70,7 @@ It executes an R-script named *myScript.R* on a single Windows Server R2 box in 
     .ConfigureMachines(AzureMachineConfig.StandardD1_V2().Instances(numberOfNodes))
     .PrepareInputUsing(filePreparation)
     .ReportProgressToConsole()
-    .SetTimeoutInMinutes(1600)
+    .SetTimeoutInMinutes(timeout)
     .ExecuteRScript("./myScript.R")
     .WithAdditionalScriptExecutionArgument(argument1)
     .WithAdditionalScriptExecutionArgument(argument2)
@@ -82,7 +82,7 @@ It executes an R-script named *myScript.R* on a single Windows Server R2 box in 
 
 Here, **environment** is a class implementing *IBatchEnvironment*, specifying the credentials for the batch account to use, and the
 credentials of the storage account where it's to put the application, input and (possibly) output files.
-You can create your own or simply use:
+You can create your own environment class, by implementing IBatchEnvironment. or you can simply use:
 
 ```cs
  IBatchEnvironment env = new BatchEnvironment()
@@ -106,9 +106,10 @@ This is a custom class, implementing *IDependencyResolver* which returns a list 
 execute depends on.
 
 Similarly we specify an implementation of *IPrepareInputFiles* (PrepareInputUsing(...)) which creates the input files locally and then returns a list containing the paths to the created files.
+This can be a custom class that implements the interface, or you can simply pass it a delegate using ```PrepareInputUsing(p => { return filePaths; }```.
 
 The actual commands that we will ask Azure Batch to execute depend on the operating system family of the machines that we select when
-invoking *ConfigureMachines(...)*, but the structure is as follows:
+invoking *ConfigureMachines(...)*, but the basic structure is as follows:
 
 ``` 
 <executable or script name> <input file name> <additional argument 1> <additional argument 2> ...
@@ -118,9 +119,7 @@ Where <additional argument 1> and <additional argument 2> are added using the
 
 When done, we invoke *StartBatch()* and wait for the batch to finish.
 
-Watts.Azure will monitor the job and print some information during the execution. Right now it only reports the current status 
-(how many nodes are active, running or finished) 
-in a flat list format. More are implemented, but not available through the Fluent API (feel free to create a pull request :-)).
+Watts.Azure will monitor the job and print some information during the execution. You can select various ways that it should report the status while the task is running (e.g. flat list, summary, etc).
 
 *If the job already exists* (e.g. because the application that started the job crashed) Watts.Azure will realize this and will simply start monitoring it.
 
@@ -140,20 +139,11 @@ args = commandArgs(trailingOnly = TRUE)
 filename <- args[1]
 ```
  
-The code uses the OutputHelper application to get the output from the execution (stdout and stderr). OutputHelper works by uploading a file containing the output to the batch account linked to the batch account.
-The pool and job are explicitly named. If not specified, they default to "BatchPool" and "BatchJob".
+The pool and job are explicitly named in the following example. If not specified, they default to "BatchPool" and "BatchJob".
 ```cs 
-BatchOutputContainer outputContainer = new BatchOutputContainer(this.environment.GetBatchStorageConnectionString());
-AzureBlobStorage outputStorage = AzureBlobStorage.Connect(this.environment.GetBatchStorageConnectionString(), outputContainer.Name);
-string relativePathToOutputHelper =
-           "..\\..\\..\\..\\Watts.Azure.Common\\Watts.Azure.Common.OutputHelper\\bin\\Debug\\Watts.Azure.Common.OutputHelper.exe"; 
-
-// Delete the output container if it already exists (it will be re-created).
-outputStorage.DeleteContainerIfExists();
-
 var builder = BatchBuilder.
     InEnvironment(this.environment)
-    .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
+	.NoDependencies()
     .WithPoolSetup(new BatchPoolSetup()
     {
         PoolId = "ExecuteBatchIntegrationTestsWindows",
@@ -171,8 +161,8 @@ var batchExecution = builder.ConfigureMachines(
 
             return new List<string>() { inputFile };
         }))
-    .DontSaveStatistics()
-    .UploadOutputTo(outputContainer)
+    .DontSaveStatistics() // Specify that we don't want an entity containing statistics about the run saved.
+    .DownloadOutput() // Specify that Watts.Azure should download the stdout and stderr of the tasks.
     .ExecuteRCode(new string[]
     {
         "test <- read.csv2(\"inputFile1.txt\")",
@@ -186,7 +176,7 @@ NetFrameworkDependencies is a built-in *IDependencyResolver* that can be used to
 path and returns all \*.config and \*.dll files, excluding files that contain the substring *.vshost*. If you don't need all files, you can implement 
 your own *IDependencyResolver*.
 The above code uses a delegate version of *IPrepareInputFiles*, and simply passes a delegate that prepares the files 
-(PrepareInputFiles.UsingFunction(() => { ... }).
+(```PrepareInputFiles.UsingFunction(() => { /* return files here */}```).
 
 The example also specifically states that statistics for the execution should not be saved. If you instead invoke *SaveStatistics()* Watts.Azure will 
 create a table storage in the Batch Storage Account (if it doesn't already exist) and insert an entity containing information about the execution 
@@ -202,18 +192,6 @@ At some point, you may want to execute multiple scripts or executables, one afte
 Watts.Azure allows you to do that, by creating a *HybridBatch*. An example:
 
 ```cs
-// Define an output blob to put the batch output in, so that we can download it after the execution
-BatchOutputContainer outputContainer = new BatchOutputContainer(this.environment.GetBatchStorageConnectionString());
-AzureBlobStorage outputStorage = AzureBlobStorage.Connect(this.environment.GetBatchStorageConnectionString(), outputContainer.Name);
-
-// Set the relative path to the outputhelper executable (which is responsible for uploading the task
-// outputs to a blob
-string relativePathToOutputHelper =
-    "..\\..\\..\\Watts.Azure.Common.OutputHelper\\bin\\Debug\\Watts.Azure.Common.OutputHelper.exe";
-
-// Delete the output storage container if it exists
-outputStorage.DeleteContainerIfExists();
-
 // Create the builder with a specific job and pool id.
 var builder = BatchBuilder
     .InEnvironment(this.environment)
@@ -236,7 +214,7 @@ var batchExecution = builder.ConfigureMachines(machineConfig)
         return new List<string>() { inputFile };
     }))
 .DontSaveStatistics()
-.UploadOutputTo(outputContainer)
+.DownloadOutput()
 .ExecuteRCode(new string[]
 {
         "test <- read.csv2(\"inputFile1.txt\")",
@@ -248,7 +226,6 @@ var batchExecution = builder.ConfigureMachines(machineConfig)
 // Prepare the second batch, which reads the file the first batch saved and writes the contents to stdout
 var secondBatch = BatchBuilder
     .AsNonPrimaryBatch(machineConfig)
-    .UploadOutputTo(outputContainer)
     .ExecuteRCode(new string[]
     {
         "theFileCreatedByTheLastScript <- read.table(\"./output.txt\")",
@@ -390,7 +367,8 @@ only entities from the source which have been modified since 'lastBackupStarted'
 ensures that the date is in a format Table Storage understands.
 
 ## Azure Data Lake
-Watts.Azure contains some utilities for interacting with Azure Data Lake and makes authentication much easier than implementing it yourself.
+Watts.Azure contains some utilities for interacting with Azure Data Lake.
+
 Watts Azure uses Service Principal Authentication when authenticating towards Azure Data Lake and all you need to do is to provide the credentials. 
 Specifically, it needs an instance of *IAzureActiveDirectoryAuthentication*, which must specify
 - SubscriptionId (find it through the [Azure portal](https://portal.azure.com)).
@@ -421,13 +399,13 @@ To make setting this up easier, we've added ```AzureServiceBusTopology```. It al
 Lets say you wanted to support 10 000 subscriptions and wanted a maximum of 500 subscriptions per topic, you could do the following:
 
 ```cs
-int maxSubscriptionsPerTopic = 500;
-int requiredNumberOfSubscriptions = 10000;
-var topology = new AzureServiceBusTopology("servicebus-namespace", "topic-name", new AzureServiceBusManagement(this.auth), AzureLocation.NorthEurope, maxSubscriptionsPerTopic);
+ int maxSubscriptionsPerTopic = 500;
+ int requiredNumberOfSubscriptions = 10000;
+ var topology = new AzureServiceBusTopology("servicebus-namespace", "topic-name", new AzureServiceBusManagement(this.auth), AzureLocation.NorthEurope, maxSubscriptionsPerTopic);
 
- topology.ReportOn(Console.WriteLine);
-            topology.GenerateBusTopology(requiredNumberOfSubscriptions);
-            topology.Emit();
+ topology.ReportOn(Console.WriteLine); // Output messages will be written to console
+ topology.GenerateBusTopology(requiredNumberOfSubscriptions); // It will generate the topology needed to support this many subscriptions
+ topology.Emit(); // The topology will be created through the management API. This can take a while...
 ```
 and to delete the topics and subscriptions, call
 ```cs
@@ -438,9 +416,10 @@ topology.Destroy();
 ## Test project
 In order to execute Integration Tests and Manual Tests in this project you will need to fill in various account information related to batch.
 
-When you run the first test, a file will be generated in the root directory of the test project, named **testEnvironment.testenv**. The file contains a JSON object specifying various required settings and credentials.
+When you run the first test, a file will be generated in the one level above the root directory of Watts.Azure, named **testEnvironment.testenv**. The file contains a JSON object specifying various required settings and credentials.
 
-**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited. Don't change that or rename the file, as that could mean you'd be accidentally uploading your Azure credentials to github. 
+**IMPORTANT**: This file is ignored by git (the pattern *.testenv) and will not be commited, even if you copy it into the repository folder. It is placed outside the repository to ensure that you
+do not accidentally commit the file.
 
 Add your relevant credentials to the file (which contains a json object deserialized into TestEnvironmentConfig.cs when each Integration/Manual test starts).
 

@@ -48,7 +48,7 @@ namespace Watts.Azure.Common.Batch.Objects
         /// Start monitoring the job.
         /// </summary>
         /// <returns></returns>
-        public async Task StartMonitoring()
+        public void StartMonitoring()
         {
             int secondsToMs = 1000;
 
@@ -63,14 +63,14 @@ namespace Watts.Azure.Common.Batch.Objects
         {
             this.Report("Checking status. Time is {0}", DateTime.Now);
 
-            this.CheckCurrentTaskStates().Wait();
+            Task.Run(this.CheckCurrentTaskStatesAsync);
         }
 
         /// <summary>
         /// Get the task states and report to the console.
         /// </summary>
         /// <returns></returns>
-        internal async Task<List<CloudTask>> CheckCurrentTaskStates()
+        internal async Task<List<CloudTask>> CheckCurrentTaskStatesAsync()
         {
             var tasks = await this.client.JobOperations.ListTasks(this.jobId, this.jobDetailLevel).ToListAsync();
 

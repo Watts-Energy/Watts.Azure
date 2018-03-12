@@ -140,12 +140,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IntegrationTests\AzureStorageIntegrationTests.cs" />
+    <Compile Include="UnitTests\AzureTaskMonitorUnitTests.cs" />
     <Compile Include="UnitTests\BatchExecutionBaseUnitTests.cs" />
     <Compile Include="UnitTests\ConsoleCommandHelperUnitTests.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="IntegrationTests\DataFactoryIntegrationTests.cs" />
     <Compile Include="IntegrationTests\DataLakeIntegrationTests.cs" />
-    <Compile Include="IntegrationTests\ExecuteBatchIntegrationTests.cs" />
+    <Compile Include="IntegrationTests\VmImagesIntegrationTests.cs" />
     <Compile Include="ManualTests\ExecuteBatchManualTests.cs" />
     <Compile Include="Objects\TestEntity.cs" />
     <Compile Include="Objects\TestEnvironmentConfig.cs" />

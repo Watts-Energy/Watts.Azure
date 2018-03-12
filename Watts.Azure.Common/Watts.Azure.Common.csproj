@@ -138,10 +138,10 @@
     <Compile Include="Batch\Objects\BatchConsoleCommand.cs" />
     <Compile Include="Batch\Objects\BatchExecutableInfo.cs" />
     <Compile Include="Batch\Objects\BatchExecutionSettings.cs" />
-    <Compile Include="Batch\Objects\BatchOutputContainer.cs" />
     <Compile Include="Batch\Objects\BatchPoolSetup.cs" />
     <Compile Include="Batch\Objects\TaskMonitorStatusReport.cs" />
     <Compile Include="Batch\Objects\TaskOutput.cs" />
+    <Compile Include="Batch\Objects\TaskOutputHelper.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DataFactory\Copy\AzureDataFactoryCopy.cs" />
     <Compile Include="DataFactory\Copy\CopyDataPipeline.cs" />
@@ -155,8 +155,8 @@
     <Compile Include="Exceptions\CannotSetFilterOnInitializedServiceBusException.cs" />
     <Compile Include="Exceptions\CouldNotCreateTableException.cs" />
     <Compile Include="Exceptions\CouldNotInsertEntityException.cs" />
+    <Compile Include="Exceptions\CouldNotUpsertBatchException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertEntityException.cs" />
-    <Compile Include="Exceptions\MustRedirectOutputException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="General\ConsoleCommandHelper.cs" />
     <Compile Include="General\DependencyResolver.cs" />

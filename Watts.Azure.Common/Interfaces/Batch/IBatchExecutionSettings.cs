@@ -28,6 +28,11 @@ namespace Watts.Azure.Common.Interfaces.Batch
         bool CleanupAfterwards { get; set; }
 
         /// <summary>
+        /// Indicates whether we should download the stdout and stderr on each batch node after the tasks finish.
+        /// </summary>
+        bool ShouldDownloadOutput { get; set; }
+
+        /// <summary>
         /// Connection string to the storage account associated with the batch account.
         /// </summary>
         string StorageConnectionString { get; }
@@ -45,11 +50,7 @@ namespace Watts.Azure.Common.Interfaces.Batch
 
         int TimeoutInMinutes { get; set; }
 
-        BatchOutputContainer OutputContainer { get; set; }
-
         bool SaveStatistics { get; set; }
-
-        string RedirectOutputToFileName { get; set; }
 
         ReportPoolStatusFormat ReportStatusFormat { get; set; }
     }

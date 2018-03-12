@@ -96,10 +96,9 @@ namespace Watts.Azure.Common.Batch.Objects
         public bool SaveStatistics { get; set; }
 
         /// <summary>
-        /// The name of the output file that output should be redirected to when executing a task.
-        /// If this is empty, output is not redirected.
+        /// Indicates whether or not we should download the stdout and stderr of each task after the job finishes.
         /// </summary>
-        public string RedirectOutputToFileName { get; set; }
+        public bool ShouldDownloadOutput { get; set; }
 
         /// <summary>
         /// The format in which progress should be reported while a batch is running.
@@ -145,7 +144,6 @@ namespace Watts.Azure.Common.Batch.Objects
 
         public bool ListEnvironmentVariables { get; set; }
 
-        public BatchOutputContainer OutputContainer { get; set; }
 
         public IList<ApplicationPackageReference> Applications { get; set; }
     }

@@ -79,6 +79,14 @@ namespace Watts.Azure.Common.Batch.Objects
             return this;
         }
 
+        public AzureMachineConfig Debian(IAzureBatchClient client)
+        {
+            this.VirtualMachineConfiguration = PredefinedMachines.GetDebian8VmConfiguration(client);
+            this.CloudServiceConfiguration = null;
+            this.Size = this.WindowsSizeToLinuxSize();
+            return this;
+        }
+
         /// <summary>
         /// Specify the number of nodes to use in the pool.
         /// </summary>

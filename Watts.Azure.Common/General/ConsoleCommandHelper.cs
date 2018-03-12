@@ -21,29 +21,27 @@ namespace Watts.Azure.Common.General
                                 $"{t.BaseCommand} {inputFile.FilePath}{this.EmptyStringIfEmptyWhitespaceOtherwise(t.Arguments)}{string.Join(" ", t.Arguments)}"));
         }
 
-        public string WrapConsoleCommand(string command, string outfile, OperatingSystemFamily operatingSystemFamily)
+        public string WrapConsoleCommand(string command, OperatingSystemFamily operatingSystemFamily)
         {
             string batchTaskDirEnvironmentVariable = operatingSystemFamily == OperatingSystemFamily.Linux
                 ? Constants.BatchTaskDirLinux
                 : Constants.BatchTaskDirWindows;
 
-            string redirectOutput = string.IsNullOrEmpty(outfile) ? string.Empty : $" > {batchTaskDirEnvironmentVariable}\\{outfile} 2>&1";
-
             switch (operatingSystemFamily)
             {
                 case OperatingSystemFamily.Linux:
-                    return $"/bin/bash -c \'set -e; set -o pipefail; {command}; wait{redirectOutput}\'";
+                    return $"/bin/bash -c \'set -e; set -o pipefail; {command}; wait\'";
                 case OperatingSystemFamily.Windows:
-                    return $"cmd /c {command}{redirectOutput}";
+                    return $"cmd /c {command}";
 
                 default:
                     return string.Empty;
             }
         }
 
-        public string ConstructCommand(List<BatchConsoleCommand> individualCommands, ResourceFile inputFile, string outfileName, OperatingSystemFamily operatingSystemFamily)
+        public string ConstructCommand(List<BatchConsoleCommand> individualCommands, ResourceFile inputFile, OperatingSystemFamily operatingSystemFamily)
         {
-            return this.WrapConsoleCommand(this.CombineConsoleCommands(individualCommands, inputFile), outfileName, operatingSystemFamily);
+            return this.WrapConsoleCommand(this.CombineConsoleCommands(individualCommands, inputFile), operatingSystemFamily);
         }
 
         internal string EmptyStringIfEmptyWhitespaceOtherwise(IList list)

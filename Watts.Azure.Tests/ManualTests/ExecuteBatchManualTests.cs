@@ -12,6 +12,7 @@ namespace Watts.Azure.Tests.ManualTests
     using Common.General;
     using Common.Storage.Objects;
     using Common.Storage.Objects.Wrappers;
+    using FluentAssertions;
     using NUnit.Framework;
     using Objects;
     using Constants = Tests.Constants;
@@ -80,7 +81,7 @@ namespace Watts.Azure.Tests.ManualTests
             // Get a machine configuration specifying one ubuntu instance of type 'small'
             var machineConfiguration =
                 AzureMachineConfig.Small()
-                    .Ubuntu(new AzureBatchClient(builder.Credentials))
+                    .Debian(new AzureBatchClient(builder.Credentials))
                     .Instances(1);
 
             var inputPreparationDelegate = PrepareInputFiles.UsingFunction(() =>
@@ -92,13 +93,17 @@ namespace Watts.Azure.Tests.ManualTests
             });
 
             // ACT
-            builder.ConfigureMachines(machineConfiguration)
+            var batch = builder.ConfigureMachines(machineConfiguration)
                 .PrepareInputUsing(inputPreparationDelegate)
+                .DownloadOutput()
                 .DontSaveStatistics()
                 .ExecuteRCode(codeToExecute)
-                .GetBatchExecution()
-                .StartBatch()
-                .Wait();
+                .GetBatchExecution();
+
+            batch.StartBatch().Wait();
+
+            batch.GetExecutionOutput()[1].StdErr.Should()
+                .BeEmpty("because we don't expect errors when running the script");
         }
 
         /// <summary>
@@ -151,17 +156,9 @@ namespace Watts.Azure.Tests.ManualTests
         public void RunSimpleRScriptOWindowsAndStoreOutput()
         {
             // ARRANGE
-            BatchOutputContainer outputContainer = new BatchOutputContainer(this.environment.GetBatchStorageConnectionString());
-            AzureBlobStorage outputStorage = AzureBlobStorage.Connect(this.environment.GetBatchStorageConnectionString(), outputContainer.Name);
-            string relativePathToOutputHelper =
-                "..\\..\\..\\Watts.Azure.Common.OutputHelper\\bin\\Debug\\Watts.Azure.Common.OutputHelper.exe";
-
-            // Delete the output container if it already exists (it will be re-created).
-            outputStorage.DeleteContainerIfExists();
-
             var builder = BatchBuilder
                 .InEnvironment(this.environment)
-                .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
+                .NoDependencies()
                 .WithPoolSetup(new BatchPoolSetup()
                 {
                     PoolId = "ExecuteWindowsStoreOutput",
@@ -179,7 +176,7 @@ namespace Watts.Azure.Tests.ManualTests
                     }))
                 .ReportingProgressUsing(p => Trace.WriteLine(p))
                 .DontSaveStatistics()
-                .UploadOutputTo(outputContainer)
+                .DownloadOutput()
                 .ExecuteRCode(new string[]
                 {
                     "test <- read.csv2(\"inputFile1.txt\")",
@@ -192,9 +189,9 @@ namespace Watts.Azure.Tests.ManualTests
 
             // ASSERT
             // Verify that there's output
-            var output = batchExecution.GetExecutionOutput().First().Output;
+            var output = batchExecution.GetExecutionOutput().First().StdOut;
 
-            Assert.AreNotEqual(0, output.Count);
+            output.Count.Should().NotBe(0);
         }
 
         /// <summary>
@@ -208,22 +205,10 @@ namespace Watts.Azure.Tests.ManualTests
         public void ExecuteHybridBatch()
         {
             // ARRANGE
-            // Prepare the output container that will hold the batch output
-            BatchOutputContainer outputContainer = new BatchOutputContainer(this.environment.GetBatchStorageConnectionString());
-            AzureBlobStorage outputStorage = AzureBlobStorage.Connect(this.environment.GetBatchStorageConnectionString(), outputContainer.Name);
-
-            // Set the relative path to the outputhelper executable (which is responsible for uploading the task
-            // outputs to a blob
-            string relativePathToOutputHelper =
-                "..\\..\\..\\Watts.Azure.Common.OutputHelper\\bin\\Debug\\Watts.Azure.Common.OutputHelper.exe";
-
-            // Delete the output storage container if it exists
-            outputStorage.DeleteContainerIfExists();
-
             // Create the builder with a specific job and pool id.
             var builder = BatchBuilder
                 .InEnvironment(this.environment)
-                .ResolveDependenciesUsing(new NetFrameworkDependencies(relativePathToOutputHelper))
+                .NoDependencies()
                 .WithPoolSetup(new BatchPoolSetup() { JobId = "HybridBatchTestJob", PoolId = "HybridBatchTestPool" });
 
             // Prepare the first batch execution, which executes a piece of R code that saves
@@ -242,7 +227,7 @@ namespace Watts.Azure.Tests.ManualTests
                     return new List<string>() { inputFile };
                 }))
             .DontSaveStatistics()
-            .UploadOutputTo(outputContainer)
+            .DownloadOutput()
             .ExecuteRCode(new string[]
             {
                     "test <- read.csv2(\"inputFile1.txt\")",
@@ -254,7 +239,6 @@ namespace Watts.Azure.Tests.ManualTests
             // Prepare the second batch, which reads the file the first batch saved and writes the contents to stdout
             var secondBatch = BatchBuilder
                 .AsNonPrimaryBatch(machineConfig)
-                .UploadOutputTo(outputContainer)
                 .ExecuteRCode(new string[]
                 {
                     "theFileCreatedByTheLastScript <- read.table(\"./output.txt\")",
@@ -279,8 +263,8 @@ namespace Watts.Azure.Tests.ManualTests
             // ASSERT
             // Assert that there is output, and that the strings Hello and World appear in the second and third output strings, respectively.
             Assert.AreNotEqual(0, hybridBatchOutput.Count);
-            Assert.IsTrue(hybridBatchOutput[0].Output[1].Contains("Hello"));
-            Assert.IsTrue(hybridBatchOutput[0].Output[2].Contains("World"));
+            Assert.IsTrue(hybridBatchOutput[1].StdOut[1].Contains("Hello"));
+            Assert.IsTrue(hybridBatchOutput[1].StdOut[2].Contains("World"));
         }
     }
 }

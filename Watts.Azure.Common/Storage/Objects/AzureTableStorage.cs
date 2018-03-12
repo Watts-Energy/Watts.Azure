@@ -4,6 +4,8 @@ namespace Watts.Azure.Common.Storage.Objects
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Exceptions;
     using Interfaces.Storage;
     using Microsoft.WindowsAzure.Storage;
@@ -63,6 +65,33 @@ namespace Watts.Azure.Common.Storage.Objects
                 {
                     // Create the table if it doesn't exist.
                     var result = table.CreateIfNotExists();
+
+                    if (!result)
+                    {
+                        throw new CouldNotCreateTableException(this.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception when creating the table {this.Name}");
+                    throw;
+                }
+            }
+
+            return table;
+        }
+
+        public async Task<CloudTable> CreateTableIfNotExistsAsync()
+        {
+            // Retrieve a reference to the table.
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
+
+            if (!table.Exists())
+            {
+                try
+                {
+                    // Create the table if it doesn't exist.
+                    var result = await table.CreateIfNotExistsAsync();
 
                     if (!result)
                     {
@@ -213,12 +242,38 @@ namespace Watts.Azure.Common.Storage.Objects
             return retVal;
         }
 
+        /// <summary>
+        /// Query the table storage.
+        /// </summary>
+        /// <typeparam name="T">Type of entity expected to be returned.</typeparam>
+        /// <param name="tableName"></param>
+        /// <param name="query"></param>
+        /// <returns></returns>
         public List<T> Query<T>(string tableName, TableQuery<T> query)
             where T : ITableEntity, new()
         {
             var table = this.CreateTableIfNotExists();
 
             return table.ExecuteQuery(query).ToList();
+        }
+
+        public async Task<List<T>> QueryAsync<T>(string tableName, TableQuery<T> query, CancellationToken cancellationToken = default(CancellationToken), Action<IList<T>> onProgress = null)
+            where T : ITableEntity, new()
+        {
+            var table = await this.CreateTableIfNotExistsAsync();
+
+            var items = new List<T>();
+            TableContinuationToken token = null;
+
+            do
+            {
+                TableQuerySegment<T> seg = await table.ExecuteQuerySegmentedAsync<T>(query, token, cancellationToken);
+                token = seg.ContinuationToken;
+                items.AddRange(seg);
+                onProgress?.Invoke(items);
+            } while (token != null && !cancellationToken.IsCancellationRequested);
+
+            return items;
         }
 
         /// <summary>
@@ -241,7 +296,33 @@ namespace Watts.Azure.Common.Storage.Objects
             // "The status code depends on the value of the Prefer header. If the Prefer header is set to return-no-content,
             // then a successful operation returns status code 204 (No Content). If the Prefer header is not specified
             // or if it is set to return-content, then a successful operation returns status code 201 (Created)."
-            if (result.HttpStatusCode != (int)System.Net.HttpStatusCode.Created && result.HttpStatusCode != (int)System.Net.HttpStatusCode.NoContent)
+            if (result.HttpStatusCode != (int)HttpStatusCode.Created && result.HttpStatusCode != (int)HttpStatusCode.NoContent)
+            {
+                throw new CouldNotInsertEntityException(entity.GetType().Name, this.Name);
+            }
+        }
+
+        /// <summary>
+        /// Attempt to insert an entity into the given table.
+        /// Note that this throws a CouldNotInsertEntityException if unsuccessful.
+        /// </summary>
+        /// <typeparam name="T">The type of entity to insert</typeparam>
+        /// <param name="entity">The entity to insert</param>
+        public async Task InsertAsync<T>(T entity) where T : ITableEntity
+        {
+            var table = this.CreateTableIfNotExists();
+
+            TableOperation insertOperation = TableOperation.Insert(entity);
+            var result = await table.ExecuteAsync(insertOperation);
+
+            Console.WriteLine("Insert returned HttpStatusCode {0}", result.HttpStatusCode);
+
+            // If the operation does not return either 201 (Created) or 204 (No Content), throw an exception
+            // According to https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/insert-entity:
+            // "The status code depends on the value of the Prefer header. If the Prefer header is set to return-no-content,
+            // then a successful operation returns status code 204 (No Content). If the Prefer header is not specified
+            // or if it is set to return-content, then a successful operation returns status code 201 (Created)."
+            if (result.HttpStatusCode != (int)HttpStatusCode.Created && result.HttpStatusCode != (int)HttpStatusCode.NoContent)
             {
                 throw new CouldNotInsertEntityException(entity.GetType().Name, this.Name);
             }
@@ -271,7 +352,7 @@ namespace Watts.Azure.Common.Storage.Objects
                 p.ForEach(q => batchOperation.Insert(q));
 
                 // Execute the batch operation.
-                var result = table.ExecuteBatch(batchOperation);
+                table.ExecuteBatch(batchOperation);
 
                 reportProgressAction?.Invoke($"Processed {currentBatch} of {numberOfBatches} ({currentBatch * MaxEntitiesPerBatch} entities)");
                 currentBatch++;
@@ -312,8 +393,6 @@ namespace Watts.Azure.Common.Storage.Objects
             TableOperation upsertOperation = TableOperation.Merge(entity);
             var result = table.Execute(upsertOperation);
 
-            Console.WriteLine("Merge returned status code {0}", result.HttpStatusCode);
-
             // https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/insert-or-replace-entity:
             //  "A successful operation returns status code 204 (No Content)."
             if (result.HttpStatusCode != (int)HttpStatusCode.NoContent)
@@ -339,13 +418,44 @@ namespace Watts.Azure.Common.Storage.Objects
                 // Create the batch operation.
                 var batchOperation = new TableBatchOperation();
 
+                // Add both customer entities to the batch insert operation.
+                p.ForEach(q => batchOperation.InsertOrReplace(q));
+
+                // Execute the batch operation.
+                var results = table.ExecuteBatch(batchOperation);
+
+                // If any of the operations returned something different from NoContent, return the 
+                if (results.Any(r => r.HttpStatusCode != (int)HttpStatusCode.NoContent))
+                {
+                    throw new CouldNotUpsertBatchException(p as List<ITableEntity>);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Batch-insert the list of entities into the table.
+        /// </summary>
+        /// <typeparam name="T">The entity type</typeparam>
+        /// <param name="entities"></param>
+        public async Task UpsertAsync<T>(List<T> entities) where T : ITableEntity
+        {
+            var table = await this.CreateTableIfNotExistsAsync();
+
+            // Divide the entities into batches and insert each batch.
+            var batches = entities.ChunkBy(MaxEntitiesPerBatch);
+
+            batches.ForEach(async p =>
+            {
+                // Create the batch operation.
+                var batchOperation = new TableBatchOperation();
+
                 Console.WriteLine($"Going to upsert {p.Count} entities");
 
                 // Add both customer entities to the batch insert operation.
                 p.ForEach(q => batchOperation.InsertOrReplace(q));
 
                 // Execute the batch operation.
-                var result = table.ExecuteBatch(batchOperation);
+                await table.ExecuteBatchAsync(batchOperation);
             });
         }
 
@@ -376,6 +486,33 @@ namespace Watts.Azure.Common.Storage.Objects
             });
         }
 
+        /// <summary>
+        /// Batch-update the list of entities into the table.
+        /// </summary>
+        /// <typeparam name="T">The type of entity</typeparam>
+        /// <param name="entities"></param>
+        public async Task UpdateAsync<T>(List<T> entities) where T : ITableEntity
+        {
+            var table = await this.CreateTableIfNotExistsAsync();
+
+            // Divide the entities into batches and insert each batch.
+            var batches = entities.ChunkBy(MaxEntitiesPerBatch);
+
+            batches.ForEach(async p =>
+            {
+                // Create the batch operation.
+                var batchOperation = new TableBatchOperation();
+
+                Console.WriteLine($"Going to update {p.Count} entities");
+
+                // Add both entities to the batch insert operation.
+                p.ForEach(q => batchOperation.Merge(q));
+
+                // Execute the batch operation.
+                await table.ExecuteBatchAsync(batchOperation);
+            });
+        }
+
         public bool Delete<T>(T entity) where T : ITableEntity
         {
             var table = this.CreateTableIfNotExists();
@@ -383,6 +520,17 @@ namespace Watts.Azure.Common.Storage.Objects
             var deleteOperation = TableOperation.Delete(entity);
 
             var result = table.Execute(deleteOperation);
+
+            return result.HttpStatusCode == (int)HttpStatusCode.NoContent;
+        }
+
+        public async Task<bool> DeleteAsync<T>(T entity) where T : ITableEntity
+        {
+            var table = await this.CreateTableIfNotExistsAsync();
+
+            var deleteOperation = TableOperation.Delete(entity);
+
+            var result =  await table.ExecuteAsync(deleteOperation);
 
             return result.HttpStatusCode == (int)HttpStatusCode.NoContent;
         }

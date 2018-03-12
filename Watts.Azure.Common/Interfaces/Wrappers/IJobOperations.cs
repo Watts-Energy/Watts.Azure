@@ -19,5 +19,17 @@ namespace Watts.Azure.Common.Interfaces.Wrappers
         IPagedEnumerable<CloudTask> ListTasks(string jobId, DetailLevel detailLevel = null, IEnumerable<BatchClientBehavior> additionalBehaviors = null);
 
         Task TerminateJobAsync(string jobId, string terminateReason = null, IEnumerable<BatchClientBehavior> additionalBehaviors = null, CancellationToken cancellationToken = default(CancellationToken));
+
+        Task<CloudJob> GetJobAsync(string jobId, DetailLevel detailLevel = null,
+            IEnumerable<BatchClientBehavior> additionalBehaviors = null,
+            CancellationToken cancellationToken = default(CancellationToken));
+
+        IPagedEnumerable<CloudJob> ListJobs(DetailLevel detailLevel = null,
+            IEnumerable<BatchClientBehavior> additionalBehaviors = null);
+
+        Task<NodeFile> GetStdOut(string jobId, string taskId,
+            IEnumerable<BatchClientBehavior> additionalBehaviors = null);
+
+        Task<NodeFile> GetStdErr(string jobId, string taskId, IEnumerable<BatchClientBehavior> additionalBehaviors = null);
     }
 }

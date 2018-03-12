@@ -4,7 +4,6 @@ namespace Watts.Azure.Common.Batch.Jobs
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
-    using Exceptions;
     using Interfaces.Batch;
     using Interfaces.General;
     using Interfaces.Wrappers;
@@ -28,6 +27,8 @@ namespace Watts.Azure.Common.Batch.Jobs
         private IAzureBlobClient blobClient;
 
         private readonly List<TaskOutput> taskOutputs = new List<TaskOutput>();
+
+        private TaskOutputHelper taskOutputHelper;
 
         /// <summary>
         /// Creates a new instance of BatchExecutionBase.
@@ -60,6 +61,7 @@ namespace Watts.Azure.Common.Batch.Jobs
             this.DependencyResolvers = dependencyResolvers;
             this.cloudAccountFactory = cloudAccountFactory;
             this.log = log;
+            this.taskOutputHelper = new TaskOutputHelper(this.account);
 
             this.Initialize();
         }
@@ -105,19 +107,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// <returns>Execution task</returns>
         public async Task StartBatch()
         {
-            this.Validate();
-
-            // If an output container was given, delete it before running, so that we know all its contents belong to the current batch
-            if (this.Settings.OutputContainer != null)
-            {
-                var blobContainer = AzureBlobStorage.Connect(
-                    this.Settings.OutputContainer.ConnectionString,
-                    this.Settings.OutputContainer.Name);
-
-                blobContainer.DeleteContainerIfExists();
-            }
-
-            var poolExists = this.CheckIfJobAlreadyExists();
+            var poolExists = await this.JobAlreadyExistsAsync();
 
             if (!poolExists)
             {
@@ -146,14 +136,6 @@ namespace Watts.Azure.Common.Batch.Jobs
             }
         }
 
-        private void Validate()
-        {
-            if (this.Settings.OutputContainer != null && string.IsNullOrEmpty(this.Settings.RedirectOutputToFileName))
-            {
-                throw new MustRedirectOutputException("You've specified an output container, but the file to redirect output to has not been specified. This is necessary in order to upload the output after the batch completes.");
-            }
-        }
-
         public List<TaskOutput> GetExecutionOutput()
         {
             return this.taskOutputs;
@@ -168,7 +150,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         {
             try
             {
-                batchClient.JobOperations.DeleteJobAsync(this.Settings.BatchPoolSetup.JobId).Wait();
+                await batchClient.JobOperations.DeleteJobAsync(this.Settings.BatchPoolSetup.JobId);
             }
             catch (Exception ex)
             {
@@ -186,7 +168,7 @@ namespace Watts.Azure.Common.Batch.Jobs
         {
             try
             {
-                batchClient.PoolOperations.DeletePoolAsync(this.Settings.BatchPoolSetup.PoolId).Wait();
+                await batchClient.PoolOperations.DeletePoolAsync(this.Settings.BatchPoolSetup.PoolId);
             }
             catch (Exception ex)
             {
@@ -236,17 +218,20 @@ namespace Watts.Azure.Common.Batch.Jobs
             {
                 DateTime startTime = DateTime.Now;
 
-                await
-                    this.account.CreatePoolAsync(this.Settings.BatchPoolSetup.PoolId, applicationFiles, this.Settings.Applications);
+                var pool = await
+                    this.account.CreatePoolAsync(this.Settings.BatchPoolSetup.PoolId, applicationFiles,
+                        this.Settings.Applications);
 
                 // Create the job that will run the tasks.
-                await
-                    this.account.CreateJobAsync(this.Settings.BatchPoolSetup.JobId, this.Settings.BatchPoolSetup.PoolId);
+                var job = await
+                    this.account.CreateJobAsync(this.Settings.BatchPoolSetup.JobId,
+                        this.Settings.BatchPoolSetup.PoolId);
 
                 // Add the tasks to the job. We need to supply a container shared access signature for the
                 // tasks so that they can upload their output to Azure Storage.
-                await
-                    this.account.AddTasksAsync(this.Settings.BatchPoolSetup.JobId, inputFiles, this.Settings.Applications);
+                var tasks = await
+                    this.account.AddTasksAsync(this.Settings.BatchPoolSetup.JobId, inputFiles,
+                        this.Settings.Applications);
 
                 // Monitor task success/failure
                 await this.MonitorJobUntilCompletionAsync();
@@ -260,16 +245,15 @@ namespace Watts.Azure.Common.Batch.Jobs
                 if (this.Settings.SaveStatistics)
                 {
                     await
-                        this.SaveStatistics(new DateTimeOffset(startTime), new DateTimeOffset(endTime), inputFiles.Count);
+                        this.SaveStatistics(new DateTimeOffset(startTime), new DateTimeOffset(endTime),
+                            inputFiles.Count);
                 }
 
                 // If there is an outputcontainer specified, download the output files.
-                if (this.Settings.OutputContainer != null)
+                if (this.Settings.ShouldDownloadOutput)
                 {
-                    this.DownloadOutput(inputFiles.Count);
+                    await this.DownloadOutputAsync(job, tasks);
                 }
-
-                await this.CleanUpIfRequired();
             }
             catch (Exception ex)
             {
@@ -277,31 +261,55 @@ namespace Watts.Azure.Common.Batch.Jobs
                 this.Report($"Exception: {ex}");
                 throw;
             }
+            finally
+            {
+                await this.CleanUpIfRequired();
+            }
         }
 
         /// <summary>
         /// Download task output locally and return a list of objects that contain the output (stdout and stderr) of the tasks.
         /// </summary>
-        /// <param name="numberOfTasks"></param>
-        internal void DownloadOutput(int numberOfTasks)
+        /// <param name="pool"></param>
+        /// <param name="job"></param>
+        /// <param name="tasks"></param>
+        internal async Task DownloadOutputAsync(CloudJob job, List<CloudTask> tasks)
         {
-            AzureBlobStorage blobStorage = AzureBlobStorage.Connect(this.Settings.OutputContainer.ConnectionString, this.Settings.OutputContainer.Name);
-
-            for (int i = 0; i < numberOfTasks; i++)
+            for (int i = 0; i < tasks.Count; i++)
             {
-                string blobName = $"task_{i}_output.txt";
-
-                string fileContents = blobStorage.GetBlobContents(blobName);
-                string[] splitToLines = fileContents.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-
-                TaskOutput taskOutput = new TaskOutput()
-                {
-                    Name = blobName,
-                    Output = splitToLines.ToList()
-                };
+                var taskOutput = await this.TryGetTaskOutput(job, tasks[i]);
 
                 this.taskOutputs.Add(taskOutput);
             }
+        }
+
+        internal async Task<TaskOutput> TryGetTaskOutput(CloudJob job, CloudTask task, bool swallowExceptions = false)
+        {
+            TaskOutput taskOutput = TaskOutput.Empty;
+
+            try
+            {
+                string[] stdOutLines = await this.taskOutputHelper.GetStdOut(job, task);
+                string[] stdErrLines = await this.taskOutputHelper.GetStdErr(job, task);
+
+                taskOutput = new TaskOutput()
+                {
+                    Name = task.DisplayName,
+                    StdOut = stdOutLines.ToList(),
+                    StdErr = stdErrLines.ToList()
+                };
+
+                return taskOutput;
+            }
+            catch(Exception) 
+            {
+                if (!swallowExceptions)
+                {
+                    throw;
+                }
+            }
+
+            return taskOutput;
         }
 
         /// <summary>
@@ -352,20 +360,10 @@ namespace Watts.Azure.Common.Batch.Jobs
         /// Get a bool indicating whether the job already exists.
         /// </summary>
         /// <returns></returns>
-        internal bool CheckIfJobAlreadyExists()
+        internal async Task<bool> JobAlreadyExistsAsync()
         {
-            try
-            {
-                var tasks = this.account.BatchClient.JobOperations.ListTasks(this.Settings.BatchPoolSetup.JobId, new ODATADetailLevel(selectClause: "id"), null);
-
-                // Try to list the tasks. If an exception is thrown, the pool doesn't exist. Otherwise, return true
-                tasks.ToList();
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return await Task.Run(async () => this.account.BatchClient.JobOperations.ListJobs()
+                .Any(p => p.Id == this.Settings.BatchPoolSetup.JobId));
         }
 
         internal async Task MonitorJobUntilCompletionAsync()
@@ -377,8 +375,9 @@ namespace Watts.Azure.Common.Batch.Jobs
                                 this.account.ProgressDelegate,
                                 this.Settings.ReportStatusFormat);
 
-            await monitor.StartMonitoring();
+            await Task.Run(async () => monitor.StartMonitoring());
 
+            // Wait for the job to finish or the timeout period to have passed.
             monitor.FinishedMutex.WaitOne(this.Settings.TimeoutInMinutes * 60 * 1000);
         }
 
@@ -405,7 +404,7 @@ namespace Watts.Azure.Common.Batch.Jobs
                                         metadata: string.Empty,
                                         type: "BatchStatistics");
 
-                statisticsStorage.SaveStatistic(statisticsEntity);
+                await statisticsStorage.SaveStatisticsAsync(statisticsEntity);
             }
             catch (Exception ex)
             {

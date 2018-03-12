@@ -2,7 +2,6 @@ namespace Watts.Azure.Utils.Interfaces.Batch
 {
     using System;
     using Common;
-    using Common.Batch.Objects;
     using Common.Interfaces.General;
     using Watts.Azure.Utils.Helpers.Batch;
 
@@ -13,9 +12,7 @@ namespace Watts.Azure.Utils.Interfaces.Batch
 
         IBatchCreationWithInputPreparation ReportProgressToConsole();
 
-        IBatchCreationWithInputPreparation UploadOutputTo(BatchOutputContainer outputContainer);
-
-        IBatchCreationWithInputPreparation RedirectOutputToFile(string filename);
+        IBatchCreationWithInputPreparation DownloadOutput();
 
         IBatchCreationWithInputPreparation LogTo(ILog log);
 

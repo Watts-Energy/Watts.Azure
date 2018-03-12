@@ -24,9 +24,9 @@ namespace Watts.Azure.Common.Interfaces.Batch
 
         Task CreateContainerIfNotExistAsync(IAzureBlobClient blobClient, string containerName);
 
-        Task CreatePoolAsync(string poolId, IList<ResourceFile> resourceFiles, IList<ApplicationPackageReference> applicationReferences = null);
+        Task<CloudPool> CreatePoolAsync(string poolId, IList<ResourceFile> resourceFiles, IList<ApplicationPackageReference> applicationReferences = null);
 
-        Task CreateJobAsync(string jobId, string poolId);
+        Task<CloudJob> CreateJobAsync(string jobId, string poolId);
 
         Task<List<CloudTask>> AddTasksAsync(string jobId, List<ResourceFile> inputFiles, IList<ApplicationPackageReference> packageReferences = null);
 

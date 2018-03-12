@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests
+namespace Watts.Azure.Tests
 {
     using System.IO;
 

@@ -13,7 +13,7 @@ namespace Watts.Azure.Tests.IntegrationTests
     /// Various integration tests of batch.
     /// </summary>
     [TestFixture]
-    public class ExecuteBatchIntegrationTests
+    public class VmImagesIntegrationTests
     {
         /// <summary>
         /// The batch environment

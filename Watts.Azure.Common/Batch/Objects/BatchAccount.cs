@@ -113,7 +113,7 @@ namespace Watts.Azure.Common.Batch.Objects
         /// a Storage account container. The StartTask will download these files from Storage prior to execution.</param>
         /// <param name="applicationReferences">If required, references to predefined applications in the batch account.</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> object that represents the asynchronous operation.</returns>
-        public async Task CreatePoolAsync(string poolId, IList<ResourceFile> resourceFiles, IList<ApplicationPackageReference> applicationReferences = null)
+        public async Task<CloudPool> CreatePoolAsync(string poolId, IList<ResourceFile> resourceFiles, IList<ApplicationPackageReference> applicationReferences = null)
         {
             this.Report("Creating pool [{0}]...", poolId);
 
@@ -153,7 +153,7 @@ namespace Watts.Azure.Common.Batch.Objects
                 // Since a successful execution of robocopy can return a non-zero exit code (e.g. 1 when one or
                 // more files were successfully copied) we need to manually exit with a 0 for Batch to recognize
                 // StartTask execution success.
-                CommandLine = new ConsoleCommandHelper().WrapConsoleCommand($"{this.executionSettings.StartupConsoleCommand.BaseCommand} {string.Join(" ", this.executionSettings.StartupConsoleCommand.Arguments)}", null, this.executionSettings.MachineConfig.OperatingSystemFamily),
+                CommandLine = new ConsoleCommandHelper().WrapConsoleCommand($"{this.executionSettings.StartupConsoleCommand.BaseCommand} {string.Join(" ", this.executionSettings.StartupConsoleCommand.Arguments)}", this.executionSettings.MachineConfig.OperatingSystemFamily),
                 ResourceFiles = resourceFiles,
                 WaitForSuccess = true,
                 UserIdentity = new UserIdentity(new AutoUserSpecification(AutoUserScope.Task, ElevationLevel.Admin))
@@ -167,6 +167,8 @@ namespace Watts.Azure.Common.Batch.Objects
                 this.Report($"Could not create pool: {ex.Message}");
                 throw;
             }
+
+            return this.Pool;
         }
 
         /// <summary>
@@ -175,7 +177,7 @@ namespace Watts.Azure.Common.Batch.Objects
         /// <param name="jobId">The id of the job to be created.</param>
         /// <param name="poolId">The id of the <see cref="CloudPool"/> in which to create the job.</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task"/> object that represents the asynchronous operation.</returns>
-        public async Task CreateJobAsync(string jobId, string poolId)
+        public async Task<CloudJob> CreateJobAsync(string jobId, string poolId)
         {
             this.Report("Creating job [{0}]...", jobId);
 
@@ -184,6 +186,8 @@ namespace Watts.Azure.Common.Batch.Objects
             job.PoolInformation = new PoolInformation { PoolId = poolId };
 
             await job.CommitAsync();
+
+            return job;
         }
 
         /// <summary>
@@ -215,25 +219,12 @@ namespace Watts.Azure.Common.Batch.Objects
             foreach (ResourceFile inputFile in inputFiles)
             {
                 string taskId = "task_" + inputFiles.IndexOf(inputFile);
-                string outFile = this.executionSettings.RedirectOutputToFileName;
 
                 string taskCommandLine =
                     consoleHelper.ConstructCommand(
                             this.executionSettings.TaskConsoleCommands,
                             inputFile,
-                            outFile,
                             this.executionSettings.MachineConfig.OperatingSystemFamily);
-
-                if (this.executionSettings.OutputContainer != null)
-                {
-                    string taskDirEnvironmentVariableName = this.executionSettings.MachineConfig.IsLinux()
-                        ? Watts.Azure.Common.Constants.BatchTaskDirLinux
-                        : Watts.Azure.Common.Constants.BatchTaskDirWindows;
-                    string uploadExecutableName = "Watts.Azure.Common.OutputHelper.exe";
-
-                    string arguments = $"\"{this.executionSettings.OutputContainer.ConnectionString}\" task_{inputFiles.IndexOf(inputFile)}_output {taskDirEnvironmentVariableName}\\{outFile}";
-                    taskCommandLine += " && " + uploadExecutableName + " " + string.Join(" ", arguments);
-                }
 
                 var task = new CloudTask(taskId, taskCommandLine);
 
@@ -258,13 +249,13 @@ namespace Watts.Azure.Common.Batch.Objects
         /// </summary>
         /// <param name="jobId"></param>
         /// <returns></returns>
-        public async Task<bool> MonitorAll(string jobId)
+        public bool MonitorAll(string jobId)
         {
             var monitor = new AzureBatchTaskMonitor(this.BatchClient, jobId, this.ProgressDelegate, this.executionSettings.ReportStatusFormat);
 
             try
             {
-                await monitor.StartMonitoring();
+                monitor.StartMonitoring();
             }
             catch (Exception ex)
             {

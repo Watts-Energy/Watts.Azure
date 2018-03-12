@@ -69,7 +69,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
             }
         }
 
-        public DataFactoryManagementClient Client { get; private set; }
+        public IDataFactoryManagementClient Client { get; private set; }
 
         /// <summary>
         /// Apply a filter query to the copy.

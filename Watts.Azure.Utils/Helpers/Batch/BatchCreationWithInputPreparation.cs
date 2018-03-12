@@ -25,7 +25,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
             this.InputFilePreparation = parent.InputFilePreparation;
             this.CreateStatistics = parent.CreateStatistics;
             this.Log = parent.Log;
-            this.OutputContainer = parent.OutputContainer;
+            this.ShouldDownloadOutput = parent.ShouldDownloadOutput;
             this.ProgressReportDelegate = parent.ProgressReportDelegate;
             this.ReportStatusFormat = parent.ReportStatusFormat;
         }
@@ -52,14 +52,16 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
         protected bool CleanUpAfterExecution { get; set; } = true;
 
-        protected string RedirectOutputToFileName { get; set; }
+        //protected string RedirectOutputToFileName { get; set; }
+
+
 
         /// <summary>
         /// The log to log errors and debug information into.
         /// </summary>
         protected ILog Log { get; set; }
 
-        protected BatchOutputContainer OutputContainer { get; set; }
+        protected bool ShouldDownloadOutput { get; set; }
 
         /// <summary>
         /// An instance of a class that prepares input files for tasks to be executed in Azure batch.
@@ -99,15 +101,9 @@ namespace Watts.Azure.Utils.Helpers.Batch
             return this;
         }
 
-        public IBatchCreationWithInputPreparation UploadOutputTo(BatchOutputContainer outputContainer)
+        public IBatchCreationWithInputPreparation DownloadOutput()
         {
-            this.OutputContainer = outputContainer;
-            return this;
-        }
-
-        public IBatchCreationWithInputPreparation RedirectOutputToFile(string filename)
-        {
-            this.RedirectOutputToFileName = filename;
+            this.ShouldDownloadOutput = true;
             return this;
         }
 

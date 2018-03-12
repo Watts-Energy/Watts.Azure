@@ -60,8 +60,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
                 retVal.TimeoutInMinutes = this.TimeoutInMinutes;
                 retVal.SaveStatistics = this.CreateStatistics;
-                retVal.OutputContainer = this.OutputContainer;
-                retVal.RedirectOutputToFileName = this.RedirectOutputToFileName;
+                retVal.ShouldDownloadOutput = this.ShouldDownloadOutput;
                 retVal.ReportStatusFormat = this.ReportStatusFormat;
 
                 return retVal;

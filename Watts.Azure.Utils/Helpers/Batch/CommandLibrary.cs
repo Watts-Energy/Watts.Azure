@@ -13,7 +13,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
 
         public static string LinuxNodeStartupCommandInstallR
             =>
-                "cp -r $AZ_BATCH_NODE_STARTUP_DIR/wd/* $AZ_BATCH_NODE_SHARED_DIR && printenv && apt-get update && apt-get install -y r-base";
+                "cp -r $AZ_BATCH_NODE_STARTUP_DIR/wd/* $AZ_BATCH_NODE_SHARED_DIR && printenv && sudo apt-get update && sudo apt-get install -y r-base";
 
         public static string InstallMonoOnUbuntu1404
             =>

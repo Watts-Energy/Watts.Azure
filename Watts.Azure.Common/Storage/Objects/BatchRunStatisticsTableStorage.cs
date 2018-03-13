@@ -8,8 +8,8 @@ namespace Watts.Azure.Common.Storage.Objects
     /// </summary>
     public class BatchRunStatisticsTableStorage : AzureTableStorage
     {
-        public BatchRunStatisticsTableStorage(CloudStorageAccount storageAccount, string tableName = "BatchStatistics")
-            : base(storageAccount, tableName)
+        public BatchRunStatisticsTableStorage(string connectionString, string tableName = "BatchStatistics")
+            : base(connectionString, tableName)
         {
             this.Name = tableName;
         }

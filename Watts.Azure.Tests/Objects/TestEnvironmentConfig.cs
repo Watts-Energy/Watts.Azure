@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests.Objects
+namespace Watts.Azure.Tests.Objects
 {
     using System.Text.RegularExpressions;
     using Microsoft.WindowsAzure.Storage;
@@ -15,7 +15,7 @@
 
         public AzureServiceBusEnvironment ServiceBusEnvironment { get; set; }
 
-        public string FileshareConnnectionString { get; set; }
+        public string FileshareConnectionString { get; set; }
 
         [JsonIgnore]
         public string FileshareAccountKey
@@ -23,7 +23,7 @@
             get
             {
                 Regex regex = new Regex("AccountKey=([^;]*);");
-                var matches = regex.Match(this.FileshareConnnectionString);
+                var matches = regex.Match(this.FileshareConnectionString);
 
                 // Take the match but remove the AccountKey= string.
                 var value = matches.Value.Replace("AccountKey=", string.Empty);
@@ -38,7 +38,7 @@
         {
             get
             {
-                CloudStorageAccount account = CloudStorageAccount.Parse(this.FileshareConnnectionString);
+                CloudStorageAccount account = CloudStorageAccount.Parse(this.FileshareConnectionString);
                 return account;
             }
         }

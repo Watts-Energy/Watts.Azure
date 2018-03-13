@@ -2,6 +2,7 @@ namespace Watts.Azure.Common.Storage.Objects
 {
     using System;
     using System.Collections.Generic;
+    using System.Data.Services.Client;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -18,12 +19,11 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <summary>
         /// Creates a new instance of AzureTableStorage, with specified name and connection string.
         /// </summary>
-        /// <param name="storageAccount"></param>
         /// <param name="tableName"></param>
         /// <param name="connectionString"></param>
-        public AzureTableStorage(CloudStorageAccount storageAccount, string tableName, string connectionString = "")
+        public AzureTableStorage(string tableName, string connectionString)
         {
-            this.StorageAccount = storageAccount;
+            this.StorageAccount = CloudStorageAccount.Parse(connectionString);
             this.Name = tableName;
             this.ConnectionString = connectionString;
             this.TableClient = this.StorageAccount.CreateCloudTableClient();
@@ -39,9 +39,7 @@ namespace Watts.Azure.Common.Storage.Objects
 
         public static AzureTableStorage Connect(string connectionString, string tableName)
         {
-            var retVal = CloudStorageAccount.Parse(connectionString);
-
-            return new AzureTableStorage(retVal, tableName, connectionString);
+            return new AzureTableStorage(tableName, connectionString);
         }
 
         public CloudTable GetTableReference()
@@ -246,10 +244,9 @@ namespace Watts.Azure.Common.Storage.Objects
         /// Query the table storage.
         /// </summary>
         /// <typeparam name="T">Type of entity expected to be returned.</typeparam>
-        /// <param name="tableName"></param>
         /// <param name="query"></param>
         /// <returns></returns>
-        public List<T> Query<T>(string tableName, TableQuery<T> query)
+        public List<T> Query<T>(TableQuery<T> query)
             where T : ITableEntity, new()
         {
             var table = this.CreateTableIfNotExists();
@@ -257,7 +254,7 @@ namespace Watts.Azure.Common.Storage.Objects
             return table.ExecuteQuery(query).ToList();
         }
 
-        public async Task<List<T>> QueryAsync<T>(string tableName, TableQuery<T> query, CancellationToken cancellationToken = default(CancellationToken), Action<IList<T>> onProgress = null)
+        public async Task<List<T>> QueryAsync<T>(TableQuery<T> query, CancellationToken cancellationToken = default(CancellationToken), Action<IList<T>> onProgress = null)
             where T : ITableEntity, new()
         {
             var table = await this.CreateTableIfNotExistsAsync();
@@ -274,6 +271,16 @@ namespace Watts.Azure.Common.Storage.Objects
             } while (token != null && !cancellationToken.IsCancellationRequested);
 
             return items;
+        }
+
+        public List<T> Query<T>(Func<T, bool> predicate)
+            where T : ITableEntity, new()
+        {
+            var table = this.CreateTableIfNotExists();
+
+            var results = table.CreateQuery<T>().Where(predicate).ToList();
+
+            return results;
         }
 
         /// <summary>
@@ -530,7 +537,7 @@ namespace Watts.Azure.Common.Storage.Objects
 
             var deleteOperation = TableOperation.Delete(entity);
 
-            var result =  await table.ExecuteAsync(deleteOperation);
+            var result = await table.ExecuteAsync(deleteOperation);
 
             return result.HttpStatusCode == (int)HttpStatusCode.NoContent;
         }

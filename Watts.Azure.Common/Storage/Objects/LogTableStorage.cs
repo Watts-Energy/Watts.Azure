@@ -16,7 +16,7 @@ namespace Watts.Azure.Common.Storage.Objects
         private readonly string instanceId;
         private readonly string applicationName;
 
-        public LogTableStorage(CloudStorageAccount account, string applicationName, string tableName = "Log") : base(account, tableName)
+        public LogTableStorage(string connectionString, string applicationName, string tableName = "Log") : base(connectionString, tableName)
         {
             this.Name = tableName;
             this.applicationName = applicationName;

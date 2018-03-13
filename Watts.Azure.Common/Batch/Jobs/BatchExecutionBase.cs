@@ -391,7 +391,7 @@ namespace Watts.Azure.Common.Batch.Jobs
             try
             {
                 BatchRunStatisticsTableStorage statisticsStorage =
-                    new BatchRunStatisticsTableStorage(CloudStorageAccount.Parse(this.Settings.StorageConnectionString));
+                    new BatchRunStatisticsTableStorage(this.Settings.StorageConnectionString);
 
                 BatchStatisticsEntity statisticsEntity = new BatchStatisticsEntity(
                                         this.Settings.BatchPoolSetup.PoolId,

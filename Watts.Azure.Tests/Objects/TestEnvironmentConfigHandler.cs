@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Tests.Objects
+namespace Watts.Azure.Tests.Objects
 {
     using System.IO;
     using Common;
@@ -38,7 +38,7 @@
                 }
             },
 
-            FileshareConnnectionString = "fileshare connection string",
+            FileshareConnectionString = "fileshare connection string",
 
             DataCopyEnvironment = new DataCopyEnvironment()
             {

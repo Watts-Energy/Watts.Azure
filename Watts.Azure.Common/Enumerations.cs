@@ -68,4 +68,17 @@ namespace Watts.Azure.Common
         Horizontally,
         Vertically
     }
+
+    public enum BackupStatus
+    {
+        Success,
+        Failure,
+        Unknown
+    }
+
+    public enum BackupMode
+    {
+        Full,
+        Incremental,
+    }
 }

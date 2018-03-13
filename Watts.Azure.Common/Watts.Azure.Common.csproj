@@ -56,8 +56,14 @@
     <Reference Include="Microsoft.Azure.Management.DataLake.Store, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.Management.DataLake.Store.2.2.0\lib\net452\Microsoft.Azure.Management.DataLake.Store.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Azure.Management.ResourceManager.Fluent, Version=1.0.0.60, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Management.ResourceManager.Fluent.1.7.0\lib\net452\Microsoft.Azure.Management.ResourceManager.Fluent.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Azure.Management.ServiceBus, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.Management.ServiceBus.1.0.2\lib\net452\Microsoft.Azure.Management.ServiceBus.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Azure.Management.Storage.Fluent, Version=1.0.0.60, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Management.Storage.Fluent.1.7.0\lib\net452\Microsoft.Azure.Management.Storage.Fluent.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Data.Edm, Version=5.8.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Data.Edm.5.8.3\lib\net40\Microsoft.Data.Edm.dll</HintPath>
@@ -81,7 +87,7 @@
       <HintPath>..\packages\Microsoft.Rest.ClientRuntime.Azure.3.3.10\lib\net452\Microsoft.Rest.ClientRuntime.Azure.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Rest.ClientRuntime.Azure.Authentication, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Rest.ClientRuntime.Azure.Authentication.2.3.1\lib\net452\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Rest.ClientRuntime.Azure.Authentication.2.3.2\lib\net452\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.ServiceBus, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAzure.ServiceBus.4.1.3\lib\net45\Microsoft.ServiceBus.dll</HintPath>
@@ -129,6 +135,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Backup\BackupManagementEntity.cs" />
+    <Compile Include="Backup\BackupManagementTable.cs" />
+    <Compile Include="Backup\BackupSetup.cs" />
+    <Compile Include="Backup\TableBackupSetup.cs" />
+    <Compile Include="Backup\TableStorageBackup.cs" />
     <Compile Include="Batch\BatchCommand.cs" />
     <Compile Include="Batch\Jobs\BatchExecutionBase.cs" />
     <Compile Include="Batch\Objects\AzureBatchTaskMonitor.cs" />
@@ -157,6 +168,7 @@
     <Compile Include="Exceptions\CouldNotInsertEntityException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertBatchException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertEntityException.cs" />
+    <Compile Include="Exceptions\UnexpectedStorageAccountNameException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="General\ConsoleCommandHelper.cs" />
     <Compile Include="General\DependencyResolver.cs" />

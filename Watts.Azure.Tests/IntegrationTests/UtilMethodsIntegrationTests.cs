@@ -23,7 +23,7 @@ namespace Watts.Azure.Tests.IntegrationTests
         {
             this.testEnvironmentCredentials = new TestEnvironmentConfigHandler(Constants.CredentialsFilePath).GetTestEnvironment();
 
-            this.logUnderTest = new LogTableStorage(this.testEnvironmentCredentials.StorageAccount, "UtilMethodsIntegrationTests");
+            this.logUnderTest = new LogTableStorage(this.testEnvironmentCredentials.FileshareConnectionString, "UtilMethodsIntegrationTests");
         }
 
         /// <summary>

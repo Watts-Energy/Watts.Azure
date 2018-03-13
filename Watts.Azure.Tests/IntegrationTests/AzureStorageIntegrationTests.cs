@@ -72,7 +72,7 @@ namespace Watts.Azure.Tests.IntegrationTests
             string sharename = "integration-test-share";
 
             // ACT
-            AzureFileshare share = AzureFileshare.Connect(this.config.FileshareConnnectionString, sharename);
+            AzureFileshare share = AzureFileshare.Connect(this.config.FileshareConnectionString, sharename);
             share.CreateIfDoesntExist(this.config.TestFileShareAccount.Credentials.AccountName, this.config.FileshareAccountKey);
             share.SaveDataToFile(filename);
 

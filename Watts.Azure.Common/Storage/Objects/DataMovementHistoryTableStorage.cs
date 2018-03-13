@@ -32,7 +32,7 @@ namespace Watts.Azure.Common.Storage.Objects
             var query = new TableQuery<DataMovementHistoryEntity>().Where(
                     TableQuery.GenerateFilterCondition("PipelineName", QueryComparisons.Equal, pipelineName));
 
-            var entities = this.table.Query(this.tableName, query);
+            var entities = this.table.Query(query);
 
             if (entities.Count == 0)
             {

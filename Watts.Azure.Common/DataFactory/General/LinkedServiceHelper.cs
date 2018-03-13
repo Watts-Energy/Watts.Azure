@@ -1,4 +1,4 @@
-﻿namespace Watts.Azure.Common.DataFactory.General
+namespace Watts.Azure.Common.DataFactory.General
 {
     using System;
     using System.Linq;
@@ -19,12 +19,12 @@
         {
             if (sourceService is IAzureTableStorage && targetService is IAzureTableStorage)
             {
-                this.CreateTargetIfItDoesntExist(sourceService as IAzureTableStorage, targetService as IAzureTableStorage);
+                this.CreateTargetTableIfNotExists((IAzureTableStorage) sourceService, (IAzureTableStorage) targetService);
                 return;
             }
             else if (sourceService is IAzureTableStorage && targetService is IAzureDataLakeStore)
             {
-                IAzureDataLakeStore dataLake = targetService as IAzureDataLakeStore;
+                IAzureDataLakeStore dataLake = (IAzureDataLakeStore) targetService;
                 dataLake.CreateDirectory(string.Empty);
                 return;
             }

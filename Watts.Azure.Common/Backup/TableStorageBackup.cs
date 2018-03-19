@@ -1,66 +1,160 @@
 namespace Watts.Azure.Common.Backup
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using DataFactory.Copy;
-    using DataFactory.General;
     using Exceptions;
     using Interfaces.Security;
     using Interfaces.Storage;
     using Microsoft.Azure.Management.ResourceManager.Fluent;
     using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
     using Microsoft.Azure.Management.Storage.Fluent;
+    using Microsoft.WindowsAzure.Storage;
     using Microsoft.WindowsAzure.Storage.Table;
     using Storage.Objects;
 
     public class TableStorageBackup
     {
+        private IStorageManager targetStorageManager;
         private readonly BackupSetup setup;
-        private readonly IAzureActiveDirectoryAuthentication authentication;
+        private readonly IAzureActiveDirectoryAuthentication backupEnvironmentAuthentication;
         private readonly BackupManagementTable backupManagementTable;
 
-        public TableStorageBackup(BackupSetup setup, IAzureActiveDirectoryAuthentication authentication, BackupManagementTable backupManagementTable)
+        private Action<string> progressDelegate;
+
+        public TableStorageBackup(BackupSetup setup, IAzureActiveDirectoryAuthentication backupEnvironmentAuthentication, BackupManagementTable backupManagementTable, Action<string> reportProgressOn = null)
         {
             this.setup = setup;
-            this.authentication = authentication;
+            this.backupEnvironmentAuthentication = backupEnvironmentAuthentication;
             this.backupManagementTable = backupManagementTable;
+            this.progressDelegate = reportProgressOn;
+
+            this.Initialize();
         }
 
-        public async Task Run()
+        public async Task<IEnumerable<BackupResult>> RunAsync()
         {
-            // The name of the target storage account is the configured prefix concatenated with the current date.
-            string targetAccountName = $"{this.setup.BackupStorageAccountPrefix}{DateTime.Now:yyyyMMdd}";
+            var retVal = new List<BackupResult>();
 
-            var credentials = this.GetCredentials();
-
-            var storageManager = StorageManager.Authenticate(credentials, this.authentication.SubscriptionId);
+            DateTime backupStartTime = DateTime.UtcNow;
 
             // Create the resource group if it doesn't already exist.
-            await this.CreateResourceGroupIfDoesntExist(this.setup.BackupTargetResourceGroupName, storageManager);
-
-            //// Create the account if it doesn't exist. 
-            //await this.CreateStorageAccountIfNotExists(storageManager, targetAccountName);
+            await this.CreateBackupResourceGroupIfDoesntExist(this.setup.BackupTargetResourceGroupName);
 
             // Go through each table and perform the backup.
             foreach (var tableToBackup in this.setup.TablesToBackup)
             {
-                await this.BackupTableAsync(tableToBackup, storageManager);
+                retVal.Add(await this.BackupTableAsync(tableToBackup, backupStartTime));
+            }
+
+            return retVal;
+        }
+
+        public async Task<IEnumerable<string>> CleanUpOldBackupsAsync()
+        {
+            List<string> retVal = new List<string>();
+
+            var accounts =
+                await this.targetStorageManager.StorageAccounts.ListByResourceGroupAsync(this.setup.BackupTargetResourceGroupName, true);
+
+            DateTime now = DateTime.UtcNow;
+
+            do
+            {
+                foreach (var account in accounts)
+                {
+                    List<string> tablesToDelete = new List<string>();
+
+                    var createdDate = this.GetDateFromStorageAccountName(account.Name);
+
+                    // Check each backup setup we have to see if there's anything that
+                    // should be deleted in the resource group (expired backups).
+                    foreach (var tableBackup in this.setup.TablesToBackup)
+                    {
+                        // If the retentiontime has passed, add the table name for deletion from the backup
+                        // storage account
+                        if (now - createdDate > tableBackup.RetentionTime)
+                        {
+                            // We should delete the table
+                            tablesToDelete.Add(tableBackup.SourceStorage.Name);
+                        }
+                    }
+
+                    // Delete any tables that have expired.
+                    await this.DeleteTablesAsync(account, tablesToDelete);
+
+                    // Delete the storage account if there are no more tables in it.
+                    var deleted = await this.DeleteStorageAccountIfNoMoreTablesAsync(account);
+
+                    if (deleted)
+                    {
+                        retVal.Add(account.Name);
+                    }
+                }
+            } while (await accounts.GetNextPageAsync() != null);
+
+            return retVal;
+        }
+
+        internal async Task<bool> DeleteStorageAccountIfNoMoreTablesAsync(IStorageAccount account)
+        {
+            CloudStorageAccount tableAccount = CloudStorageAccount.Parse(this.GetStorageConnectionString(account.Name, (await account.GetKeysAsync()).First().Value));
+            CloudTableClient tableClient = tableAccount.CreateCloudTableClient();
+
+            if (!tableClient.ListTables().Any())
+            {
+                await this.targetStorageManager.StorageAccounts.DeleteByIdAsync(account.Id);
+                return true;
+            }
+
+            return false;
+        }
+
+        internal async Task DeleteTablesAsync(IStorageAccount account, List<string> tableNames)
+        {
+            try
+            {
+                var keys = await account.GetKeysAsync();
+                var connectionString = this.GetStorageConnectionString(account.Name, keys.First().Value);
+
+                foreach (var tableName in tableNames)
+                {
+                    IAzureTableStorage tableStorage = new AzureTableStorage(tableName, connectionString);
+                    var success = tableStorage.DeleteIfExists();
+
+                    if (!success)
+                    {
+                        throw new TableDeleteFailedException(tableName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
             }
         }
 
-        internal async Task<IResourceGroup> CreateResourceGroupIfDoesntExist(string resourceGroupName, IStorageManager manager)
+        internal void Initialize()
         {
-            var exists = await manager.ResourceManager.ResourceGroups.ContainAsync(resourceGroupName);
+            var backupEnvironmentCredentials = this.GetCredentials();
+
+            this.targetStorageManager = StorageManager.Authenticate(backupEnvironmentCredentials, this.backupEnvironmentAuthentication.SubscriptionId);
+        }
+
+        internal async Task<IResourceGroup> CreateBackupResourceGroupIfDoesntExist(string resourceGroupName)
+        {
+            var exists = await this.targetStorageManager.ResourceManager.ResourceGroups.ContainAsync(resourceGroupName);
 
             if (!exists)
             {
-                return await manager.ResourceManager.ResourceGroups.Define(resourceGroupName)
+                return await this.targetStorageManager.ResourceManager.ResourceGroups.Define(resourceGroupName)
                     .WithRegion(this.setup.BackupTargetRegion).CreateAsync();
             }
             else
             {
-                return await manager.ResourceManager.ResourceGroups.GetByNameAsync(resourceGroupName);
+                return await this.targetStorageManager.ResourceManager.ResourceGroups.GetByNameAsync(resourceGroupName);
             }
         }
 
@@ -68,59 +162,62 @@ namespace Watts.Azure.Common.Backup
         /// Perform a backup according to the given setup.
         /// </summary>
         /// <param name="tableBackupSetup"></param>
-        /// <param name="manager"></param>
         /// <returns></returns>
-        internal async Task BackupTableAsync(TableBackupSetup tableBackupSetup, IStorageManager manager)
+        internal async Task<BackupResult> BackupTableAsync(TableBackupSetup tableBackupSetup, DateTime backupStartTime)
         {
             // Check when the table was last backed up.
-            var lastBackupEntity = this.backupManagementTable
-                .Query<BackupManagementEntity>(p => p.SourceTableName == tableBackupSetup.SourceStorage.Name)
-                .OrderByDescending(p => p.BackupStartedAt)
-                .FirstOrDefault();
+            var lastBackupEntity = this.GetLastBackupEntity(tableBackupSetup);
 
-            DateTimeOffset now = DateTimeOffset.UtcNow;
+            DateTime startTime = DateTime.UtcNow;
 
             IStorageAccount targetAccount;
 
             string sourceQuery = null;
 
+            BackupReturnCode returnCode;
+
             if (lastBackupEntity == null)
             {
                 // We've never backed this table up before.
-                targetAccount = await this.GetAccount(manager, now);
+                targetAccount = await this.GetNewAccount(backupStartTime);
+                returnCode = BackupReturnCode.BackupToNewContainerDone;
             }
             else
             {
                 // If the last backup started more than the configured frequency ago, we should run the backup now.
-                var mustRunBackupNow = now - lastBackupEntity.BackupStartedAt >
+                var mustRunBackupNow = startTime - lastBackupEntity.BackupStartedAt >
                                        tableBackupSetup.IncrementalChangesFrequency;
 
                 if (!mustRunBackupNow)
                 {
-                    return;
+                    return new BackupResult()
+                    {
+                        Setup = tableBackupSetup,
+                        ReturnCode = BackupReturnCode.Nop,
+                    };
                 }
-
-                var targetStorageAccountName = lastBackupEntity.TargetStorageAccountName;
 
                 DateTime timeWhenStorageContainerWasCreated =
                     this.GetDateFromStorageAccountName(lastBackupEntity.TargetStorageAccountName);
 
                 // If the last backup is so long ago that we should change storage account target for the table, create a new storage account.
-                var mustChangeTarget = now - timeWhenStorageContainerWasCreated > tableBackupSetup.SwitchTargetFrequency;
+                var mustChangeTarget = startTime - timeWhenStorageContainerWasCreated > tableBackupSetup.SwitchTargetFrequency;
 
                 if (mustChangeTarget)
                 {
-                    targetAccount = await this.GetAccount(manager, DateTimeOffset.UtcNow);
-                    sourceQuery = null;
+                    targetAccount = await this.GetNewAccount(DateTime.UtcNow);
+                    returnCode = BackupReturnCode.BackupToNewContainerDone;
                 }
                 else
                 {
-                    targetAccount = await this.GetStorageAccount(manager, targetStorageAccountName);
+                    targetAccount = await this.GetStorageAccount(lastBackupEntity.TargetStorageAccountName);
 
                     if (tableBackupSetup.BackupMode == BackupMode.Incremental)
                     {
                         sourceQuery = $"Timestamp gt datetime'{lastBackupEntity.BackupStartedAt.ToIso8601()}'";
                     }
+
+                    returnCode = BackupReturnCode.BackupToExistingContainerDone;
                 }
             }
 
@@ -131,33 +228,61 @@ namespace Watts.Azure.Common.Backup
 
             IAzureTableStorage targetTableStorage = new AzureTableStorage(tableBackupSetup.SourceStorage.Name, this.GetStorageConnectionString(accountName, key));
 
-            // Create a data factory and run the actual copy pipeline.
+            this.RunPipeline(tableBackupSetup, sourceQuery, targetTableStorage, startTime);
+
+            DateTime end = DateTime.UtcNow;
+
+            // Save an entity in the management table to remember the last time we ran.
+            BackupManagementEntity historyEntity = new BackupManagementEntity(Guid.NewGuid().ToString(), tableBackupSetup.SourceStorage.Name, targetAccount.Name, targetTableStorage.Name, DateTime.UtcNow, startTime, end, BackupStatus.Success, tableBackupSetup.BackupMode);
+
+            this.backupManagementTable.Insert(historyEntity);
+
+            return new BackupResult()
+            {
+                Setup = tableBackupSetup,
+                ReturnCode = returnCode,
+                BackUpResourceGroup = this.setup.BackupTargetResourceGroupName,
+                BackUpStorageAccountName = targetAccount.Name,
+                BackUpTableName = targetTableStorage.Name
+            };
+        }
+
+        internal void RunPipeline(TableBackupSetup backupSetup, string sourceQuery, IAzureTableStorage targetTableStorage, DateTimeOffset startTime)
+        {
             CopySetup copySetup = new CopySetup
             {
                 DeleteDataFactoryIfExists = true,
                 TargetDatasetName = $"{targetTableStorage.Name}-target-dataset",
                 SourceDatasetName = $"{targetTableStorage.Name}-source-dataset",
-                CopyPipelineName = $"Copy-{targetTableStorage.Name}-{now.Year}-{now.Month}-{now.Day}",
+                CopyPipelineName = $"Copy-{targetTableStorage.Name}-{startTime.Year}-{startTime.Month}-{startTime.Day}",
                 CreateTargetIfNotExists = true,
                 SourceLinkedServiceName = $"{targetTableStorage.Name}-source-service",
                 TargetLinkedServiceName = $"{targetTableStorage.Name}-target-service",
-                TimeoutInMinutes = tableBackupSetup.TimeoutInMinutes
+                TimeoutInMinutes = backupSetup.TimeoutInMinutes
             };
 
             CopyDataPipeline copyPipeline =
-                CopyDataPipeline.UsingDataFactorySettings(this.setup.DataFactorySetup, copySetup, this.authentication, Console.WriteLine);
+                CopyDataPipeline.UsingDataFactorySettings(this.setup.DataFactorySetup, copySetup, this.backupEnvironmentAuthentication, Console.WriteLine);
 
-            copyPipeline.From(tableBackupSetup.SourceStorage).To(targetTableStorage).UsingSourceQuery(sourceQuery).Start();
+            copyPipeline.From(backupSetup.SourceStorage).To(targetTableStorage).UsingSourceQuery(sourceQuery).Start();
 
             copyPipeline.Start();
-
+            copyPipeline.CleanUp();
         }
 
-        internal async Task<IStorageAccount> GetAccount(IStorageManager manager, DateTimeOffset date)
+        private BackupManagementEntity GetLastBackupEntity(TableBackupSetup tableBackupSetup)
         {
-            string targetAccountName = $"{this.setup.BackupStorageAccountPrefix}{DateTime.Now:yyyyMMdd}";
+            return this.backupManagementTable
+                .Query<BackupManagementEntity>(p => p.SourceTableName == tableBackupSetup.SourceStorage.Name)
+                .OrderByDescending(p => p.BackupStartedAt)
+                .FirstOrDefault();
+        }
 
-            return await this.CreateStorageAccountIfNotExists(manager, targetAccountName);
+        internal async Task<IStorageAccount> GetNewAccount(DateTimeOffset date)
+        {
+            string targetAccountName = $"{date:yyyyMMddHHmmss}{this.setup.BackupStorageAccountSuffix}";
+
+            return await this.CreateStorageAccountIfNotExists(targetAccountName);
         }
 
         internal string GetStorageConnectionString(string accountName, string accountKey)
@@ -172,42 +297,65 @@ namespace Watts.Azure.Common.Backup
         /// <returns></returns>
         internal DateTime GetDateFromStorageAccountName(string storageAccountName)
         {
-            string[] splitName = storageAccountName.Split(new string[] { "-" }, StringSplitOptions.RemoveEmptyEntries);
+            var unexpectedNameException = new UnexpectedStorageAccountNameException($"The account name {storageAccountName} does not follow the format [year][month][day][hour][minute][second][name].");
 
-            var unexpectedNameException = new UnexpectedStorageAccountNameException($"The account name {storageAccountName} does not follow the format [name]-[year]-[month]-[day].");
-
-            // We expect a minimum length of 4 when splitting on the '-' character, since our naming scheme is 'name-year-month-day'
-            int expectedMinimumLength = 4;
-            if (splitName.Length < expectedMinimumLength)
+            int expectedLength = 14;
+            if (storageAccountName.Length < expectedLength)
             {
                 throw unexpectedNameException;
             }
 
-            if (!int.TryParse(splitName[1], out var year))
+            // Take the first 14 characters, i.e. the part related to date (yyyyMMddHHmmss)
+            string name = storageAccountName.Substring(0, 14);
+
+            
+            int startIndexOfYear = 0;
+            int startIndexOfMonth = 4;
+            int startIndexOfDay = 6;
+            int startIndexOfHour = 8;
+            int startIndexOfMinute = 10;
+            int startIndexOfSecond = 12;
+
+            if (!int.TryParse(name.Substring(startIndexOfYear, 4), out var year))
             {
                 throw unexpectedNameException;
             }
 
-            if (int.TryParse(splitName[2], out var month))
+            if (!int.TryParse(name.Substring(startIndexOfMonth, 2), out var month))
             {
                 throw unexpectedNameException;
             }
 
-            if (int.TryParse(splitName[3], out var day))
+            if (!int.TryParse(name.Substring(startIndexOfDay, 2), out var day))
             {
                 throw unexpectedNameException;
             }
 
-            return new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc);
+            if (!int.TryParse(name.Substring(startIndexOfHour, 2), out var hour))
+            {
+                throw unexpectedNameException;
+            }
+
+            if (!int.TryParse(name.Substring(startIndexOfMinute, 2), out var minute))
+            {
+                throw unexpectedNameException;
+            }
+
+            if (!int.TryParse(name.Substring(startIndexOfSecond, 2), out var second))
+            {
+                throw unexpectedNameException;
+            }
+
+            return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
         }
 
-        internal async Task<IStorageAccount> CreateStorageAccountIfNotExists(IStorageManager storageManager, string targetAccountName)
+        internal async Task<IStorageAccount> CreateStorageAccountIfNotExists(string targetAccountName)
         {
-            var account = await this.GetStorageAccount(storageManager, targetAccountName);
+            var account = await this.GetStorageAccount(targetAccountName);
 
             if (account == null)
             {
-                account = await storageManager
+                account = await this.targetStorageManager
                     .StorageAccounts
                     .Define(targetAccountName)
                     .WithRegion(this.setup.BackupTargetRegion)
@@ -219,9 +367,9 @@ namespace Watts.Azure.Common.Backup
             return account;
         }
 
-        internal async Task<IStorageAccount> GetStorageAccount(IStorageManager storageManager, string name)
+        internal async Task<IStorageAccount> GetStorageAccount(string name)
         {
-            return await storageManager.StorageAccounts.GetByResourceGroupAsync(this.setup.BackupTargetResourceGroupName, name);
+            return await this.targetStorageManager.StorageAccounts.GetByResourceGroupAsync(this.setup.BackupTargetResourceGroupName, name);
         }
 
         internal AzureCredentials GetCredentials()
@@ -229,10 +377,10 @@ namespace Watts.Azure.Common.Backup
             return new AzureCredentials(
                 new ServicePrincipalLoginInformation()
                 {
-                    ClientId = this.authentication.Credentials.ClientId,
-                    ClientSecret = this.authentication.Credentials.ClientSecret
+                    ClientId = this.backupEnvironmentAuthentication.Credentials.ClientId,
+                    ClientSecret = this.backupEnvironmentAuthentication.Credentials.ClientSecret
                 },
-                this.authentication.Credentials.TenantId,
+                this.backupEnvironmentAuthentication.Credentials.TenantId,
                 this.setup.AzureEnvironment);
         }
     }

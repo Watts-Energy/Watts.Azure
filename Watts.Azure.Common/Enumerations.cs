@@ -81,4 +81,12 @@ namespace Watts.Azure.Common
         Full,
         Incremental,
     }
+
+    public enum BackupReturnCode
+    {
+        BackupToExistingContainerDone,
+        BackupToNewContainerDone,
+        Nop,
+        Error,
+    }
 }

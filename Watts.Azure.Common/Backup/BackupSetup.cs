@@ -6,13 +6,16 @@ namespace Watts.Azure.Common.Backup
     using Interfaces.Storage;
     using Microsoft.Azure.Management.ResourceManager.Fluent;
     using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
+    using Security;
 
     public class BackupSetup
     {
+        private AppActiveDirectoryAuthenticationCredentials BackupSubscriptionCredentials;
+
         /// <summary>
         /// The prefix of the backed up table. The name will be this prefix + the date when the backup target was created.
         /// </summary>
-        public string BackupStorageAccountPrefix { get; set; }
+        public string BackupStorageAccountSuffix { get; set; }
 
         /// <summary>
         /// The name of the resource group to place backups in.

@@ -137,6 +137,7 @@
   <ItemGroup>
     <Compile Include="Backup\BackupManagementEntity.cs" />
     <Compile Include="Backup\BackupManagementTable.cs" />
+    <Compile Include="Backup\BackupResult.cs" />
     <Compile Include="Backup\BackupSetup.cs" />
     <Compile Include="Backup\TableBackupSetup.cs" />
     <Compile Include="Backup\TableStorageBackup.cs" />
@@ -168,6 +169,7 @@
     <Compile Include="Exceptions\CouldNotInsertEntityException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertBatchException.cs" />
     <Compile Include="Exceptions\CouldNotUpsertEntityException.cs" />
+    <Compile Include="Exceptions\TableDeleteFailedException.cs" />
     <Compile Include="Exceptions\UnexpectedStorageAccountNameException.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="General\ConsoleCommandHelper.cs" />

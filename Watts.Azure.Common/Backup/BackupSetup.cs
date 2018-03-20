@@ -10,8 +10,6 @@ namespace Watts.Azure.Common.Backup
 
     public class BackupSetup
     {
-        private AppActiveDirectoryAuthenticationCredentials BackupSubscriptionCredentials;
-
         /// <summary>
         /// The prefix of the backed up table. The name will be this prefix + the date when the backup target was created.
         /// </summary>

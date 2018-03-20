@@ -151,6 +151,7 @@
   <ItemGroup>
     <Compile Include="IntegrationTests\AzureStorageIntegrationTests.cs" />
     <Compile Include="IntegrationTests\BackupIntegrationTests.cs" />
+    <Compile Include="Objects\MockPagedEnumerable.cs" />
     <Compile Include="UnitTests\AzureTaskMonitorUnitTests.cs" />
     <Compile Include="UnitTests\BatchExecutionBaseUnitTests.cs" />
     <Compile Include="UnitTests\ConsoleCommandHelperUnitTests.cs" />

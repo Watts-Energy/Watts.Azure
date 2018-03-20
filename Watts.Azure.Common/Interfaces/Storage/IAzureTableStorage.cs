@@ -20,7 +20,7 @@ namespace Watts.Azure.Common.Interfaces.Storage
 
         CloudTable CreateTableFromTemplateEntity(DynamicTableEntity templateEntity);
 
-        bool DeleteIfExists();
+        bool DeleteIfExists(bool waitUntilItsGone = false);
 
         /// <summary>
         /// Insert an entity into the given table. Note that the entity must implement ITableEntity.

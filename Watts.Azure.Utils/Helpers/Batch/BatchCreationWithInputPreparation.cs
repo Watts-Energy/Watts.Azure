@@ -3,6 +3,7 @@ namespace Watts.Azure.Utils.Helpers.Batch
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Reflection;
     using Common;
     using Common.Batch.Objects;
     using Common.General;
@@ -180,7 +181,8 @@ namespace Watts.Azure.Utils.Helpers.Batch
         /// <returns></returns>
         public RBatchCreation ExecuteRCode(string[] code)
         {
-            string tempFileName = $"{Guid.NewGuid()}_main.R";
+            var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string tempFileName = Path.Combine(directory, $"{Guid.NewGuid()}_main.R");
             File.WriteAllLines(tempFileName, code);
             var manualDependencyResolver = DependencyResolver.UsingFunction(() => new List<string>());
             manualDependencyResolver.AddFileDependency(tempFileName);

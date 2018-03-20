@@ -3,6 +3,7 @@ namespace Watts.Azure.Tests.IntegrationTests
     using System;
     using System.Diagnostics;
     using System.IO;
+    using System.Reflection;
     using System.Threading;
     using Azure.Utils.Build;
     using Azure.Utils.Objects;
@@ -127,7 +128,9 @@ namespace Watts.Azure.Tests.IntegrationTests
                 .ReportProgressTo((progress) => { Trace.WriteLine(progress); })
                 .StartCopy();
 
-            string downloadFileName = "./" + setup.TargetDatasetName + ".txt";
+            string testDataDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            string downloadFileName = Path.Combine(testDataDirectory, setup.TargetDatasetName + ".txt");
 
             targetDataLake.DownloadFile(string.Join("/", targetDataLake.Directory, setup.TargetDatasetName), downloadFileName, true);
 

@@ -50,7 +50,7 @@ namespace Watts.Azure.Tests.UnitTests
         /// </summary>
         [Category("UnitTest"), Category("AzureBusTopology")]
         [Test]
-        public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_OneSubLevel()
+        public void Topology_CreateEnoughSubscribersToCauseScaling_CreatesChildNamespaces_OneSubLevel()
         {
             // Set a number of subscriptions that is larger than the allowed number of subscriptions per topic.
             int numberOfTopicSubscriptions = 3 * this.subscribersPerTopicLimit;
@@ -66,7 +66,7 @@ namespace Watts.Azure.Tests.UnitTests
         /// </summary>
         [Category("UnitTest"), Category("AzureBusTopology")]
         [Test]
-        public void Topology_CreateEnoughAgentsToCauseScaling_CreatesChildNamespaces_TwoLevels()
+        public void Topology_CreateEnoughSubscribersToCauseScaling_CreatesChildNamespaces_TwoLevels()
         {
             // Set a very high number of subscriptions, leaading to three levels total
             int numberOfTopicSubscriptions = (int)Math.Pow(this.subscribersPerTopicLimit, 2) + this.subscribersPerTopicLimit;

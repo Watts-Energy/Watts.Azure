@@ -4,6 +4,7 @@ namespace Watts.Azure.Tests.IntegrationTests
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using Azure.Utils.Objects;
     using Common.Security;
     using Common.Storage.Objects;
@@ -44,18 +45,20 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_CreateFile()
         {
             // ARRANGE
+            string fileName = "integrationtest_create_file.txt";
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string directoryName = "/integrationtest_datalake_createfile";
-            string outFile = "integrationtest_create_file.txt";
+            string outFile = Path.Combine(testDirectory, fileName);
             File.WriteAllText(outFile, "hello world!");
 
             // Create the directory
             this.dataLake.CreateDirectory(directoryName).Wait();
 
             // ACT
-            this.dataLake.UploadFile(outFile, directoryName + "/" + outFile, true);
+            this.dataLake.UploadFile(outFile, string.Join("/", directoryName, fileName), true);
 
             List<FileStatusProperties> itemsInDirectory = this.dataLake.ListItems(directoryName);
-            Func<bool> action = () => itemsInDirectory.Any(p => p.PathSuffix.Equals(outFile));
+            Func<bool> action = () => itemsInDirectory.Any(p => p.PathSuffix.Equals(fileName));
 
             // ASSERT
             action().Should().Be(true, "because the function returns true if the directory contains our uploaded file and the directory should contain it");
@@ -103,11 +106,13 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_DeleteDirectoryWhenNotEmptyWithoutForce_ThrowsException()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string directoryName = "integrationtest_deletedirectorywithoutforce";
             this.dataLake.CreateDirectory(directoryName).Wait();
-            string filepath = "somefile.txt";
-            File.WriteAllText(filepath, "some content");
-            this.dataLake.UploadFile(filepath, directoryName + "/" + filepath);
+            string fileName = "somefile.txt";
+            string filePath = Path.Combine(testDirectory, fileName);
+            File.WriteAllText(filePath, "some content");
+            this.dataLake.UploadFile(filePath, string.Join("/", directoryName, fileName));
 
             // Assert that attempting to delete the directory with recursive:false while not empty throws an exception.
             Action deleteDirectoryWithoutForce = () => this.dataLake.DeleteDirectory(directoryName, recursive: false).Wait();
@@ -120,7 +125,7 @@ namespace Watts.Azure.Tests.IntegrationTests
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryName, true).Wait();
-            File.Delete(filepath);
+            File.Delete(filePath);
         }
 
         /// <summary>
@@ -131,11 +136,13 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_DeleteDirectoryWhenNotEmpty_WithForce()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string directoryName = "integrationtest_deletedirectorywithforce";
             this.dataLake.CreateDirectory(directoryName).Wait();
-            string filepath = "somefile.txt";
-            File.WriteAllText(filepath, "some content");
-            this.dataLake.UploadFile(filepath, directoryName + "/" + filepath);
+            string fileName = "somefile.txt";
+            string filePath = Path.Combine(testDirectory, fileName);
+            File.WriteAllText(filePath, "some content");
+            this.dataLake.UploadFile(filePath, string.Join("/", directoryName, fileName));
 
             this.dataLake.DeleteDirectory(directoryName, recursive: true).Wait();
 
@@ -143,7 +150,7 @@ namespace Watts.Azure.Tests.IntegrationTests
             this.dataLake.PathExists(directoryName).Should().Be(false, "because we expect the directory to have been deleted, even though it was not empty, since we specified 'force':true");
 
             // Clean up
-            File.Delete(filepath);
+            File.Delete(filePath);
         }
 
         /// <summary>
@@ -169,14 +176,16 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_DeleteFile()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string directoryName = "integrationtest_deletefile";
-            string localFilepath = "filetodelete.txt";
-            File.WriteAllText(localFilepath, "content");
-            string dataLakeFilePath = directoryName + "/" + localFilepath;
+            string localFileName = "filetodelete.txt";
+            string localFilePath = Path.Combine(testDirectory, localFileName);
+            File.WriteAllText(localFilePath, "content");
+            string dataLakeFilePath = directoryName + "/" + localFileName;
 
             // ACT
             this.dataLake.CreateDirectory(directoryName).Wait();
-            this.dataLake.UploadFile(localFilepath, dataLakeFilePath);
+            this.dataLake.UploadFile(localFilePath, dataLakeFilePath);
 
             this.dataLake.DeleteFile(dataLakeFilePath).Wait();
 
@@ -185,7 +194,7 @@ namespace Watts.Azure.Tests.IntegrationTests
 
             // Clean up
             this.dataLake.DeleteDirectory(directoryName, true).Wait();
-            File.Delete(localFilepath);
+            File.Delete(localFilePath);
         }
 
         [Category("IntegrationTest"), Category("DataLake")]
@@ -212,11 +221,13 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_DeleteDirectoryOnFile_Fails()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string directoryname = "integrationtest_deletedirectoryonfile";
             this.dataLake.CreateDirectory(directoryname).Wait();
-            string localFilePath = Guid.NewGuid() + ".txt";
+            string localFileName = Guid.NewGuid() + ".txt";
+            string localFilePath = Path.Combine(testDirectory, localFileName);
             File.WriteAllText(localFilePath, "testing");
-            string dataLakeFilePath = directoryname + "/" + localFilePath;
+            string dataLakeFilePath = directoryname + "/" + localFileName;
 
             // ACT
             this.dataLake.CreateDirectory(directoryname).Wait();
@@ -236,13 +247,16 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void DataLake_ConcatenateFiles()
         {
             // ARRANGE. Write two local files, upload them to the data lake store and prepare paths and filenames
-            string localFilePath1 = "concatFile1.txt";
-            string localFilePath2 = "concatFile2.txt";
+            string firstFileName = "concatFile1.txt";
+            string secondFileName = "concatFile2.txt";
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string localFilePath1 = Path.Combine(testDirectory, "concatFile1.txt");
+            string localFilePath2 = Path.Combine(testDirectory, "concatFile2.txt");
             string dataLakeDirectoryName = "/integrationtest_concatenatefiles";
             string dataLakeConcatFileName = string.Join("/", dataLakeDirectoryName, "concatFile.txt");
-            string dataLakeFileName1 = string.Join("/", dataLakeDirectoryName, localFilePath1);
-            string dataLakeFileName2 = string.Join("/", dataLakeDirectoryName, localFilePath2);
-            string downloadFileName = "./concatFile.txt";
+            string dataLakeFileName1 = string.Join("/", dataLakeDirectoryName, firstFileName);
+            string dataLakeFileName2 = string.Join("/", dataLakeDirectoryName, secondFileName);
+            string downloadFileName = Path.Combine(testDirectory, "concatFile.txt");
 
             File.WriteAllText(localFilePath1, "Hello");
             File.WriteAllText(localFilePath2, "World");
@@ -276,13 +290,17 @@ namespace Watts.Azure.Tests.IntegrationTests
         [Test]
         public void DataLake_AppendToFile()
         {
+            string fileName = "appendToThisFile.txt";
+
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             // ARRANGE. Create file names and write the local file
-            string localFilePath = "appendToThisFile.txt";
+            string localFilePath = Path.Combine(testDirectory, fileName);
             string dataLakeDirectoryName = "/integrationtest_appendtofile";
             string contentInOriginalFile = "Hello";
             string contentToAppend = "World";
-            string dataLakeFileName = string.Join("/", dataLakeDirectoryName, localFilePath);
-            string downloadFileName = "./appendedToFile.txt";
+            string dataLakeFileName = string.Join("/", dataLakeDirectoryName, fileName);
+            string downloadFileName = Path.Combine(testDirectory, "appendedToFile.txt");
 
             File.WriteAllText(localFilePath, contentInOriginalFile);
 

@@ -12,6 +12,7 @@ namespace Watts.Azure.Tests.UnitTests
     using Microsoft.Azure.Batch;
     using Moq;
     using NUnit.Framework;
+    using Objects;
 
     /// <summary>
     /// Various unit tests of the BatchExecutionBase class.
@@ -86,6 +87,12 @@ namespace Watts.Azure.Tests.UnitTests
 
             this.mockCloudAccountFactory.Setup(p => p.GetStorageAccount(It.IsAny<string>()))
                 .Returns(mockStorageAccount.Object);
+
+            // Mock the ListJobs method to return some empty list of jobs.
+            MockPagedEnumerable<CloudJob> mockPagedEnumerator = new MockPagedEnumerable<CloudJob>();
+            this.mockJobOperations
+                .Setup(p => p.ListJobs(It.IsAny<DetailLevel>(), It.IsAny<IEnumerable<BatchClientBehavior>>()))
+                .Returns(mockPagedEnumerator);
 
             this.executionUnderTest = new BatchExecutionBase(this.mockBatchAccount.Object, this.mockExecutionSettings.Object, this.mockPrepareInput.Object, this.mockDependencyResolver.Object, this.mockCloudAccountFactory.Object, null);
         }
@@ -211,7 +218,10 @@ namespace Watts.Azure.Tests.UnitTests
                         BatchInputContainerName = string.Empty
                     }
                 });
+
             this.mockExecutionSettings.Setup(p => p.CleanupAfterwards).Returns(false);
+
+            
 
             // ACT
             this.executionUnderTest.StartBatch().Wait();

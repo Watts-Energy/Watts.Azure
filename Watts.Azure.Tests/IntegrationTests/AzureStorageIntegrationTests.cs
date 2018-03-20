@@ -2,6 +2,7 @@ namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.IO;
+    using System.Reflection;
     using Azure.Utils.Interfaces.Batch;
     using Common.Storage.Objects;
     using FluentAssertions;
@@ -37,15 +38,17 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void StoreBlob()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string blobName = "myBlob.txt";
             string tempFile = "TempFile.txt";
+            string tempFilePath = Path.Combine(testDirectory, tempFile);
 
             string[] fileLines = new[] { "line1", "line2" };
 
-            File.WriteAllLines(tempFile, fileLines);
+            File.WriteAllLines(tempFilePath, fileLines);
 
             // ACT
-            this.blobStorageUnderTest.UploadFromFile(tempFile, blobName);
+            this.blobStorageUnderTest.UploadFromFile(tempFilePath, blobName);
 
             var downloadedBlob = this.blobStorageUnderTest.GetBlobContents(blobName);
             var splitContent = downloadedBlob.Split(new string[] { "\n", "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
@@ -67,25 +70,28 @@ namespace Watts.Azure.Tests.IntegrationTests
         public void TestUploadFile()
         {
             // ARRANGE
+            string testDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             string filename = "TestUploadFile.txt";
-            File.WriteAllText(filename, "This is an automated test");
+            string filePath = Path.Combine(testDirectory, filename);
+            File.WriteAllText(filePath, "This is an automated test");
             string sharename = "integration-test-share";
 
             // ACT
             AzureFileshare share = AzureFileshare.Connect(this.config.FileshareConnectionString, sharename);
             share.CreateIfDoesntExist(this.config.TestFileShareAccount.Credentials.AccountName, this.config.FileshareAccountKey);
-            share.SaveDataToFile(filename);
+            share.SaveDataToFile(filePath);
 
             // ASSERT
-            string localFileCopyName = "TestUploadFile_Downloaded.txt";
+            string localFileCopyName = Path.Combine(testDirectory, "TestUploadFile_Downloaded.txt");
             if (File.Exists(localFileCopyName)) { File.Delete(localFileCopyName); }
 
             share.DownloadFile(filename, localFileCopyName);
 
-            File.ReadAllText(filename).Should().Be(File.ReadAllText(localFileCopyName), "because the contents of the file that we uploaded and then downloaded, should be equal");
+            File.ReadAllText(filePath).Should().Be(File.ReadAllText(localFileCopyName), "because the contents of the file that we uploaded and then downloaded, should be equal");
 
-            // Delete the local file
-            File.Delete(filename);
+            // Delete the local files
+            File.Delete(filePath);
+            File.Delete(localFileCopyName);
         }
     }
 }

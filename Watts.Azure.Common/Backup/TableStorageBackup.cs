@@ -24,6 +24,13 @@ namespace Watts.Azure.Common.Backup
 
         private Action<string> progressDelegate;
 
+        /// <summary>
+        /// Create a new instance of TableStorageBackup.
+        /// </summary>
+        /// <param name="setup"></param>
+        /// <param name="backupEnvironmentAuthentication"></param>
+        /// <param name="backupManagementTable"></param>
+        /// <param name="reportProgressOn"></param>
         public TableStorageBackup(BackupSetup setup, IAzureActiveDirectoryAuthentication backupEnvironmentAuthentication, BackupManagementTable backupManagementTable, Action<string> reportProgressOn = null)
         {
             this.setup = setup;
@@ -34,6 +41,10 @@ namespace Watts.Azure.Common.Backup
             this.Initialize();
         }
 
+        /// <summary>
+        /// Run the backup.
+        /// </summary>
+        /// <returns></returns>
         public async Task<IEnumerable<BackupResult>> RunAsync()
         {
             var retVal = new List<BackupResult>();
@@ -52,15 +63,22 @@ namespace Watts.Azure.Common.Backup
             return retVal;
         }
 
+        /// <summary>
+        /// Clean up any expired backups, including the resource groups in which they reside, provided the resource group no longer
+        /// contains table backups.
+        /// </summary>
+        /// <returns>A list of names of the storage accounts that were deleted.</returns>
         public async Task<IEnumerable<string>> CleanUpOldBackupsAsync()
         {
             List<string> retVal = new List<string>();
 
+            // Get all storage accounts in the target resource group.
             var accounts =
                 await this.targetStorageManager.StorageAccounts.ListByResourceGroupAsync(this.setup.BackupTargetResourceGroupName, true);
 
             DateTime now = DateTime.UtcNow;
 
+            // Check all accounts for tables that have expired. If the storage account no longer contains any tables, it is also deleted...
             do
             {
                 foreach (var account in accounts)
@@ -75,7 +93,7 @@ namespace Watts.Azure.Common.Backup
                     {
                         // If the retentiontime has passed, add the table name for deletion from the backup
                         // storage account
-                        if (now - createdDate > tableBackup.RetentionTime)
+                        if (now - createdDate > tableBackup.Schedule.RetentionTimeSpan)
                         {
                             // We should delete the table
                             tablesToDelete.Add(tableBackup.SourceStorage.Name);
@@ -98,6 +116,16 @@ namespace Watts.Azure.Common.Backup
             return retVal;
         }
 
+        /// <summary>
+        /// Initialize the backup by settings credentials and creating the storage manager used manage resources.
+        /// </summary>
+        internal void Initialize()
+        {
+            var backupEnvironmentCredentials = this.GetCredentials();
+
+            this.targetStorageManager = StorageManager.Authenticate(backupEnvironmentCredentials, this.backupEnvironmentAuthentication.SubscriptionId);
+        }
+
         internal async Task<bool> DeleteStorageAccountIfNoMoreTablesAsync(IStorageAccount account)
         {
             CloudStorageAccount tableAccount = CloudStorageAccount.Parse(this.GetStorageConnectionString(account.Name, (await account.GetKeysAsync()).First().Value));
@@ -112,15 +140,25 @@ namespace Watts.Azure.Common.Backup
             return false;
         }
 
+        /// <summary>
+        /// Delete the named tables in the storage account.
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="tableNames"></param>
+        /// <returns></returns>
         internal async Task DeleteTablesAsync(IStorageAccount account, List<string> tableNames)
         {
+            string currentTableName = string.Empty;
             try
             {
+                // Get the keys from the storage account and construct a connection string.
                 var keys = await account.GetKeysAsync();
                 var connectionString = this.GetStorageConnectionString(account.Name, keys.First().Value);
 
+                // Iterate tables and delete them.
                 foreach (var tableName in tableNames)
                 {
+                    currentTableName = tableName;
                     IAzureTableStorage tableStorage = new AzureTableStorage(tableName, connectionString);
                     var success = tableStorage.DeleteIfExists();
 
@@ -130,19 +168,17 @@ namespace Watts.Azure.Common.Backup
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine(ex);
+                throw new TableDeleteFailedException(currentTableName);
             }
         }
 
-        internal void Initialize()
-        {
-            var backupEnvironmentCredentials = this.GetCredentials();
-
-            this.targetStorageManager = StorageManager.Authenticate(backupEnvironmentCredentials, this.backupEnvironmentAuthentication.SubscriptionId);
-        }
-
+        /// <summary>
+        /// Create the resource group if it doesnt exist. 
+        /// </summary>
+        /// <param name="resourceGroupName"></param>
+        /// <returns>A reference to the resource group that either already existed, or was just created.</returns>
         internal async Task<IResourceGroup> CreateBackupResourceGroupIfDoesntExist(string resourceGroupName)
         {
             var exists = await this.targetStorageManager.ResourceManager.ResourceGroups.ContainAsync(resourceGroupName);
@@ -161,7 +197,8 @@ namespace Watts.Azure.Common.Backup
         /// <summary>
         /// Perform a backup according to the given setup.
         /// </summary>
-        /// <param name="tableBackupSetup"></param>
+        /// <param name="tableBackupSetup">Setup for the table backup.</param>
+        /// <param name="backupStartTime">The time the backup started, needed to group backups into storage accounts.</param>
         /// <returns></returns>
         internal async Task<BackupResult> BackupTableAsync(TableBackupSetup tableBackupSetup, DateTime backupStartTime)
         {
@@ -176,6 +213,7 @@ namespace Watts.Azure.Common.Backup
 
             BackupReturnCode returnCode;
 
+            // If we've never backed this table up before, perform a full table backup.
             if (lastBackupEntity == null)
             {
                 // We've never backed this table up before.
@@ -186,8 +224,9 @@ namespace Watts.Azure.Common.Backup
             {
                 // If the last backup started more than the configured frequency ago, we should run the backup now.
                 var mustRunBackupNow = startTime - lastBackupEntity.BackupStartedAt >
-                                       tableBackupSetup.IncrementalChangesFrequency;
+                                       tableBackupSetup.Schedule.IncrementalLoadFrequency;
 
+                // If we don't need to run the backup now, just return a result indicating a no-operation.
                 if (!mustRunBackupNow)
                 {
                     return new BackupResult()
@@ -197,11 +236,12 @@ namespace Watts.Azure.Common.Backup
                     };
                 }
 
+                // Get the time when the storage account was created, to check whether we need to switch to a new storage account for this table.
                 DateTime timeWhenStorageContainerWasCreated =
                     this.GetDateFromStorageAccountName(lastBackupEntity.TargetStorageAccountName);
 
                 // If the last backup is so long ago that we should change storage account target for the table, create a new storage account.
-                var mustChangeTarget = startTime - timeWhenStorageContainerWasCreated > tableBackupSetup.SwitchTargetFrequency;
+                var mustChangeTarget = startTime - timeWhenStorageContainerWasCreated > tableBackupSetup.Schedule.SwitchTargetStorageFrequency;
 
                 if (mustChangeTarget)
                 {
@@ -210,8 +250,10 @@ namespace Watts.Azure.Common.Backup
                 }
                 else
                 {
+                    // Get the account that this table was backed up to last.
                     targetAccount = await this.GetStorageAccount(lastBackupEntity.TargetStorageAccountName);
 
+                    // If it's an incremental backup, construct a query that will filter out any entities that have already been backed up.
                     if (tableBackupSetup.BackupMode == BackupMode.Incremental)
                     {
                         sourceQuery = $"Timestamp gt datetime'{lastBackupEntity.BackupStartedAt.ToIso8601()}'";

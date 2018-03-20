@@ -2,6 +2,7 @@ namespace Watts.Azure.Tests.IntegrationTests
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Text;
     using System.Threading;
@@ -40,6 +41,7 @@ namespace Watts.Azure.Tests.IntegrationTests
             this.environment = this.config.DataCopyEnvironment;
         }
 
+        [Category("IntegrationTest")]
         [Test]
         public void InsertManagementEntity()
         {
@@ -54,7 +56,11 @@ namespace Watts.Azure.Tests.IntegrationTests
             managementTable.Delete(historyEntity);
         }
 
-        [Category("IntegrationTest")]
+        /// <summary>
+        /// Tests running a full backup once and verifies that the correct status code is returned.
+        /// </summary>
+        /// <returns></returns>
+        [Category("IntegrationTest"), Category("LongRunning"), Category("Backup")]
         [Test]
         public async Task RunFullBackupOnce()
         {
@@ -71,12 +77,14 @@ namespace Watts.Azure.Tests.IntegrationTests
             // Set the time spans to some value. It doesn't really matter, as we're just running one full
             // backup of a table that doesn't already exist.
             int inconsequentialValue = 100;
-            var switchToNewContainerSpan = TimeSpan.FromMinutes(inconsequentialValue);
-            var incrementalLoadSpan = TimeSpan.FromMinutes(inconsequentialValue);
-            var retentionTime = TimeSpan.FromMinutes(inconsequentialValue);
+            BackupSchedule schedule = new BackupSchedule()
+            {
+                SwitchTargetStorageFrequency = TimeSpan.FromMinutes(inconsequentialValue),
+                IncrementalLoadFrequency = TimeSpan.FromMinutes(inconsequentialValue),
+                RetentionTimeSpan = TimeSpan.FromMinutes(inconsequentialValue)
+            };
 
-            BackupSetup setup = this.GetTestSetup(resourceGroupName, testTable, switchToNewContainerSpan,
-                incrementalLoadSpan, retentionTime);
+            BackupSetup setup = this.GetTestSetup(resourceGroupName, testTable, schedule);
 
             IAzureActiveDirectoryAuthentication auth = this.GetAuthentication();
 
@@ -93,7 +101,12 @@ namespace Watts.Azure.Tests.IntegrationTests
             managementTable.DeleteIfExists();
         }
 
-        [Category("IntegrationTest")]
+        /// <summary>
+        /// Tests that first running one backup and then an incremental one, returns the right status code, indicating that an incremental
+        /// load was performed.
+        /// </summary>
+        /// <returns></returns>
+        [Category("IntegrationTest"), Category("LongRunning"), Category("Backup")]
         [Test]
         public async Task RunIncrementalBackup()
         {
@@ -111,12 +124,15 @@ namespace Watts.Azure.Tests.IntegrationTests
             // two consecutive backups, we should get an incremental load.
             int someVeryHighValue = 1000;
 
-            var switchTargetFrequency = TimeSpan.FromMinutes(someVeryHighValue);
-            var incrementalLoadFrequency = TimeSpan.FromMinutes(5);
-            var retentionTime = TimeSpan.FromMinutes(someVeryHighValue);
+            BackupSchedule schedule = new BackupSchedule()
+            {
+                IncrementalLoadFrequency = TimeSpan.FromMinutes(5),
+                SwitchTargetStorageFrequency = TimeSpan.FromMinutes(someVeryHighValue),
+                RetentionTimeSpan = TimeSpan.FromMinutes(someVeryHighValue)
+            };
 
             // Get a backup setup that backs up the data in testtable.
-            var setup = this.GetTestSetup(resourceGroupName, testTable, switchTargetFrequency, incrementalLoadFrequency, retentionTime);
+            var setup = this.GetTestSetup(resourceGroupName, testTable, schedule);
 
             IAzureActiveDirectoryAuthentication auth = this.GetAuthentication();
 
@@ -137,7 +153,13 @@ namespace Watts.Azure.Tests.IntegrationTests
             managementTable.DeleteIfExists();
         }
 
-        [Category("IntegrationTest")]
+        /// <summary>
+        /// Tests that performing a backup with a single table where the backup schedule specifies that the backup expires right away,
+        /// makes the clean up function delete the entire resource group that was created for the backup (since the table backup has expired,
+        /// and there are no more backup tables left in the storage account).
+        /// </summary>
+        /// <returns></returns>
+        [Category("IntegrationTest"), Category("LongRunning"), Category("Backup")]
         [Test]
         public async Task CleanUpOutdatedBackups()
         {
@@ -154,12 +176,15 @@ namespace Watts.Azure.Tests.IntegrationTests
             // container to be deleted.
             int someVeryHighValue = 1000;
 
-            var switchTargetFrequency = TimeSpan.FromMinutes(someVeryHighValue);
-            var incrementalLoadFrequency = TimeSpan.FromMinutes(someVeryHighValue);
-            var retentionTime = TimeSpan.FromMinutes(1);
+            BackupSchedule schedule = new BackupSchedule()
+            {
+                IncrementalLoadFrequency = TimeSpan.FromMinutes(someVeryHighValue),
+                SwitchTargetStorageFrequency = TimeSpan.FromMinutes(someVeryHighValue),
+                RetentionTimeSpan = TimeSpan.FromMinutes(1)
+            };
 
             // Get a backup setup that backs up the data in testtable.
-            var setup = this.GetTestSetup(resourceGroupName, testTable, switchTargetFrequency, incrementalLoadFrequency, retentionTime);
+            var setup = this.GetTestSetup(resourceGroupName, testTable, schedule);
 
             IAzureActiveDirectoryAuthentication auth = this.GetAuthentication();
 
@@ -179,7 +204,7 @@ namespace Watts.Azure.Tests.IntegrationTests
             // Invoke the clean up method, which should delete the table we created during the
             // backup since it has expired.
             await backup.CleanUpOldBackupsAsync();
-            
+
             // ASSERT that since the testtable was the only table in the storage account,
             // the storage account has been deleted.
             var storageAccountsAfterCleanup = await this.ListStorageAccountsInResourceGroup(backup, backupResult);
@@ -190,80 +215,128 @@ namespace Watts.Azure.Tests.IntegrationTests
             managementTable.DeleteIfExists();
         }
 
-        [Category("IntegrationTest")]
+        /// <summary>
+        /// Tests that running two backups where one of them expires shortly and then invoking the clean up function, deletes one of the tables
+        /// that were backed up, and not the other.
+        /// </summary>
+        /// <returns></returns>
+        [Category("IntegrationTest"), Category("LongRunning"), Category("Backup")]
         [Test]
         public async Task CleanUpOutdatedBackups_NotAllTablesExpired()
         {
-           string resourceGroupName = "testBackupResources4";
 
-            IAzureTableStorage testTable = this.GetTestTable();
-            IAzureTableStorage testTable2 = this.GetTestTable("TestTable2");
-
-            testTable.DeleteIfExists();
-            testTable2.DeleteIfExists();
-
-            Thread.Sleep(60000);
-
+            string resourceGroupName = "testBackupResources4";
             BackupManagementTable managementTable = this.GetBackupManagementTable();
-            managementTable.DeleteIfExists();
 
-            var testEntities = TestFacade.RandomEntities(100, Guid.NewGuid().ToString()).ToList();
+            try
+            {
+                managementTable.DeleteIfExists(true);
 
-            testTable.Insert(testEntities, null);
-            testTable2.Insert(testEntities, null);
+                // Create the backup.
+                TableStorageBackup backup =
+                    this.CreateTwoTableBackupWhereOneTableExpiresShortly(resourceGroupName, managementTable);
+
+                var backupResults = (await backup.RunAsync()).ToList();
+
+                // The backup has now been executed. To be absolutely sure, we wait a little while,
+                // so that at least one minute has passed (the retention time of the backup)
+                Thread.Sleep(1000 * 60);
+
+                // ASSERT that the backup container contains both tables before the clean up.
+                var backupResult = backupResults[0];
+                var secondBackupResult = backupResults[1];
+                var tablesBeforeCleanup =
+                    (await this.ListBackupStorageAccountTablesAsync(backup, backupResult)).ToList();
+                tablesBeforeCleanup.Select(p => p.Name).Should().Contain(backupResult.BackUpTableName,
+                    "because the table should have been backed up now");
+                tablesBeforeCleanup.Select(p => p.Name).Should().Contain(secondBackupResult.BackUpTableName,
+                    "because the table should have been backed up now");
+
+                // Invoke the clean up method, which should delete the only one of the tables we created during the
+                // backup since it has expired.
+                await backup.CleanUpOldBackupsAsync();
+
+                // ASSERT that the storage account itself still exists, since there's only one of the two backed up tables
+                // that should have expired. 
+                var storageAccountsAfterCleanup = await this.ListStorageAccountsInResourceGroup(backup, backupResult);
+                storageAccountsAfterCleanup.Select(p => p.Name).Should().Contain(backupResult.BackUpStorageAccountName,
+                    "because only one of the two tables should have expired, and we should therefore not delete the storage account");
+
+                // ASSERT that there is now one table that was cleaned up and one that was not.
+                var tablesAfterCleanup =
+                    (await this.ListBackupStorageAccountTablesAsync(backup, backupResult)).ToList();
+                tablesAfterCleanup.Select(p => p.Name).Should().NotContain(backupResult.BackUpTableName,
+                    "Because we set the expiry to a very short time, so the table should have been deleted.");
+                tablesAfterCleanup.Select(p => p.Name).Should().Contain(secondBackupResult.BackUpTableName,
+                    "because we set the expiry to a very long time, so it should still exist.");
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Exception in CleanUpOutdatedBackups_NotAllTablesExpired: {ex}");
+                throw;
+            }
+            finally
+            {
+                IAzureActiveDirectoryAuthentication auth = this.GetAuthentication();
+                AzureCredentials credentials = new AzureCredentials(new ServicePrincipalLoginInformation()
+                {
+                    ClientId = auth.Credentials.ClientId,
+                    ClientSecret = auth.Credentials.ClientSecret
+                }, 
+                this.environment.Credentials.TenantId, AzureEnvironment.AzureGlobalCloud);
+
+                // Clean up...
+                await this.DeleteResourceGroupAsync(resourceGroupName, credentials);
+                managementTable.DeleteIfExists();
+            }
+        }
+
+        /// <summary>
+        /// Setup up a backup where there are two tables to back up, where one of them expires very shortly and the other one not at all.
+        /// </summary>
+        /// <param name="resourceGroupName"></param>
+        /// <param name="managementTable"></param>
+        /// <returns></returns>
+        internal TableStorageBackup CreateTwoTableBackupWhereOneTableExpiresShortly(string resourceGroupName, BackupManagementTable managementTable)
+        {
+            int someInconsequentialNumberOfEntities = 100;
+            IAzureTableStorage testTable = this.CreateAndPopulateTestTable("TestTable", someInconsequentialNumberOfEntities);
+            IAzureTableStorage testTable2 =
+                this.CreateAndPopulateTestTable("TestTable2", someInconsequentialNumberOfEntities);
 
             // Set the retention time very low, so that when we ask for a clean up, we can expect the
             // container to be deleted.
-            int someVeryHighValue = 1000;
+            var backupWillNotExpire = this.GetBackupScheduleThatExpiresIn(TimeSpan.MaxValue);
+            var backupExpiresInOneMinute = this.GetBackupScheduleThatExpiresIn(TimeSpan.FromMinutes(1));
 
-            var switchTargetFrequency = TimeSpan.FromMinutes(someVeryHighValue);
-            var incrementalLoadFrequency = TimeSpan.FromMinutes(someVeryHighValue);
-            var retentionTime = TimeSpan.FromMinutes(1);
-
-            // Get a backup setup that backs up the data in testtable.
-            var setup = this.GetTestSetup(resourceGroupName, testTable, switchTargetFrequency, incrementalLoadFrequency, retentionTime);
-
-            var veryLargeTimeSpan = TimeSpan.MaxValue;
-            var setup2 = this.GetTestSetup(resourceGroupName, testTable2, veryLargeTimeSpan, veryLargeTimeSpan,
-                veryLargeTimeSpan);
-
-            // Add the table backup from setup2, which is a backup that will not expire, ever.
+            // Get two setups, one that backs testTable up, but where the backup expires in one minute and one that backs testtable2 up,
+            // but that will never expire.
+            var setup = this.GetTestSetup(resourceGroupName, testTable, backupExpiresInOneMinute);
+            var setup2 = this.GetTestSetup(resourceGroupName, testTable2, backupWillNotExpire);
             setup.TablesToBackup.Add(setup2.TablesToBackup.First());
+
+            // Setup now contains two table backups, where one of them will expire shortly (one minute).
 
             IAzureActiveDirectoryAuthentication auth = this.GetAuthentication();
 
             // Create the backup.
             TableStorageBackup backup = new TableStorageBackup(setup, auth, managementTable);
-            var backupResults = (await backup.RunAsync()).ToList();
 
-            // The backup has now been executed. To be absolutely sure, we wait a little while,
-            // so that at least one minute has passed (the retention time)
-            Thread.Sleep(1000 * 60);
-            var backupResult = backupResults[0];
-            var secondBackupResult = backupResults[1];
-            var tablesBeforeCleanup = (await this.ListBackupStorageAccountTablesAsync(backup, backupResult)).ToList();
+            return backup;
 
-            // Check that the backup container contains both the tables
-            tablesBeforeCleanup.Select(p => p.Name).Should().Contain(backupResult.BackUpTableName, "because the table should have been backed up now");
-            tablesBeforeCleanup.Select(p => p.Name).Should().Contain(secondBackupResult.BackUpTableName, "because the table should have been backed up now");
+        }
 
-            // Invoke the clean up method, which should delete the only one of the tables we created during the
-            // backup since it has expired.
-            await backup.CleanUpOldBackupsAsync();
+        internal IAzureTableStorage CreateAndPopulateTestTable(string name, int numberOfEntities)
+        {
+            IAzureTableStorage testTable = this.GetTestTable(name);
 
-            // ASSERT that the storage account itself still exists, since there's only one table
-            // that should have expired. 
-            var storageAccountsAfterCleanup = await this.ListStorageAccountsInResourceGroup(backup, backupResult);
-            storageAccountsAfterCleanup.Select(p => p.Name).Should().Contain(backupResult.BackUpStorageAccountName, "because only one of the two tables should have expired, we should not delete the storage account");
+            testTable.DeleteIfExists();
 
-            var tablesAfterCleanup = (await this.ListBackupStorageAccountTablesAsync(backup, backupResult)).ToList();
+            var testEntities = TestFacade.RandomEntities(numberOfEntities, Guid.NewGuid().ToString()).ToList();
 
-            tablesAfterCleanup.Select(p => p.Name).Should().NotContain(backupResult.BackUpTableName, "Because we set the expiry to a very short time, so the table should have been deleted.");
-            tablesAfterCleanup.Select(p => p.Name).Should().Contain(secondBackupResult.BackUpTableName, "because we set the expiry to a very long time, so it should still exist.");
+            testTable.Insert(testEntities, null);
 
-            // Clean up...
-            await this.DeleteResourceGroupAsync(resourceGroupName, backup.GetCredentials());
-            managementTable.DeleteIfExists();
+            return testTable;
         }
 
         private async Task<IEnumerable<IStorageAccount>> ListStorageAccountsInResourceGroup(TableStorageBackup backup,
@@ -295,9 +368,9 @@ namespace Watts.Azure.Tests.IntegrationTests
             return tableClient.ListTables();
         }
 
-        private BackupSetup GetTestSetup(string resourceGroupName, IAzureTableStorage sourceTable, TimeSpan switchTargetsSpan, TimeSpan incrementalLoadFrequency, TimeSpan retentionTime)
+        private BackupSetup GetTestSetup(string resourceGroupName, IAzureTableStorage sourceTable, BackupSchedule schedule)
         {
-           return new BackupSetup()
+            return new BackupSetup()
             {
                 AzureEnvironment = AzureEnvironment.AzureGlobalCloud,
                 BackupTargetRegion = Region.USEast,
@@ -309,20 +382,31 @@ namespace Watts.Azure.Tests.IntegrationTests
                     new TableBackupSetup()
                     {
                         SourceStorage = sourceTable,
-                        SwitchTargetFrequency = switchTargetsSpan,
                         TimeoutInMinutes = 5,
                         BackupMode = BackupMode.Full,
-                        IncrementalChangesFrequency = incrementalLoadFrequency,
-                        RetentionTime = retentionTime
+                        Schedule = schedule
                     }
                 }
+            };
+        }
+
+        private BackupSchedule GetBackupScheduleThatExpiresIn(TimeSpan span)
+        {
+            int someVeryHighValue = 1000;
+            var longTimeSpan = TimeSpan.FromDays(someVeryHighValue);
+
+            return new BackupSchedule()
+            {
+                SwitchTargetStorageFrequency = longTimeSpan,
+                IncrementalLoadFrequency = longTimeSpan,
+                RetentionTimeSpan = span
             };
         }
 
         private BackupManagementTable GetBackupManagementTable()
         {
             var managementTable = new BackupManagementTable(this.environment.GetDataFactoryStorageAccountConnectionString());
-            managementTable.DeleteIfExists();
+            managementTable.DeleteIfExists(true);
 
             return managementTable;
         }

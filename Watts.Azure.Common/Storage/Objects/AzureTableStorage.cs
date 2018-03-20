@@ -69,6 +69,16 @@ namespace Watts.Azure.Common.Storage.Objects
                         throw new CouldNotCreateTableException(this.Name);
                     }
                 }
+                catch (StorageException storageException)
+                {
+                    var extendedInformation = storageException.RequestInformation.ExtendedErrorInformation;
+                    var errorCode = extendedInformation.ErrorCode;
+                    if (errorCode == "TableBeingDeleted")
+                    {
+                        Thread.Sleep(45000);
+                        table.CreateIfNotExists();
+                    }
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception when creating the table {this.Name}");
@@ -125,11 +135,18 @@ namespace Watts.Azure.Common.Storage.Objects
         /// Delete this table if it exists.
         /// </summary>
         /// <returns></returns>
-        public bool DeleteIfExists()
+        public bool DeleteIfExists(bool waitUntilItsGone = false)
         {
             CloudTable table = this.TableClient.GetTableReference(this.Name);
 
             var result = table.DeleteIfExists();
+
+            if (waitUntilItsGone)
+            {
+                // According to this post: https://social.msdn.microsoft.com/Forums/azure/en-US/f79c24cc-81e5-4b9b-8e9c-2a066115936f/error-409-microsoftwindowsazurestoragestorageexception?forum=windowsazuredevelopment 
+                // we should wait 40 seconds
+                Thread.Sleep(41000);
+            }
 
             return result;
         }

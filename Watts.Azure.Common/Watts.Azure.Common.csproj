@@ -138,6 +138,7 @@
     <Compile Include="Backup\BackupManagementEntity.cs" />
     <Compile Include="Backup\BackupManagementTable.cs" />
     <Compile Include="Backup\BackupResult.cs" />
+    <Compile Include="Backup\BackupSchedule.cs" />
     <Compile Include="Backup\BackupSetup.cs" />
     <Compile Include="Backup\TableBackupSetup.cs" />
     <Compile Include="Backup\TableStorageBackup.cs" />

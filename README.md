@@ -12,6 +12,7 @@ Watts.Azure provides, among other things, a fluid interface that makes it simple
 It's by no means a complete suite of tools to work with Azure, but it's a starting point. Any contributions that make it more complete are extremely welcome!
 
 It also makes it easy to set up backup or data migrations in Azure Table Storage, by using the fluent interface for the [Azure Data Factory Copy Data activity](https://docs.microsoft.com/en-us/azure/data-factory/data-factory-data-movement-activities). In particular, it is convenient for creating backups, which can even be incremental, where you only copy the data that is not already present in an existing backup storage.
+There is a specific utility exactly for this purpose. It is described in the section [Azure Table Storage Backup](#azure-table-storage-backup).
 
 Some tools for working directly with Azure Table Storage, Azure Blob Storage, Azure Service Bus Topics and Azure Data Factory are also implemented.
 
@@ -365,6 +366,27 @@ You can use the timestamp of entities to perform incremental loads by e.g. speci
 E.g. when moving data from Table Storage you could write ```Timestamp gt datetime'{lastBackupStarted.Value.ToIso8601()}'``` which selects
 only entities from the source which have been modified since 'lastBackupStarted' (which would be a DateTime/DateTimeOffset). ```ToIso8601``` simply
 ensures that the date is in a format Table Storage understands.
+
+# Azure Table Storage Backup
+The class ```TableStorageBackup.cs``` in Watts.Azure.Common.Backup makes it very easy to set up rolling backups of Azure Tables.
+It is meant to be run frequently through e.g. an Azure Web job, so that it can constantly monitor the schedule and see if new backups need to be created
+or incremental changes need to be transferred from the source table to the current backup.
+
+You can use it to build backup pipelines that automatically switch between targets and maintain a rolling backup of the table, cleaning up copies that are older
+than some configured value.
+
+To do this, you need to provide a ```BackupSetup``` object, in turn containing any number of ```TableBackupSetup``` objects, each specifying a ```BackupSchedule```.
+The backup schedule specifies three timespans: 
+- Retention time: i.e. how long will any backup live,
+- Incremental load frequency: (how often will incremental changes be copied from the source to the newest backup), and
+- Switch target frequency: How long before we should switch to a new storage account.
+
+The backup object will handle everything related to provisioning of resources in the target subscription and will create the resource group specified in the setup if it doesn't
+already exist, the resource groups when needed and backup tables.
+
+All storage accounts are placed under the configured resource group, and are given names according to the time they were created concatenated with a suffix you specify in the setup.
+
+All this is described in more detail in the Wiki and there are integration tests you can read to get a feeling for the functionality.
 
 ## Azure Data Lake
 Watts.Azure contains some utilities for interacting with Azure Data Lake.

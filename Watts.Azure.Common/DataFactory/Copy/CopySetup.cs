@@ -1,5 +1,7 @@
 namespace Watts.Azure.Common.DataFactory.Copy
 {
+    using Storage.Objects;
+
     /// <summary>
     /// Setup for a data copy
     /// </summary>
@@ -41,5 +43,7 @@ namespace Watts.Azure.Common.DataFactory.Copy
         public bool CreateTargetIfNotExists { get; set; } = false;
 
         public bool DeleteDataFactoryIfExists { get; set; } = false;
+
+        public DataStructure DataStructure { get; set; }
     }
 }

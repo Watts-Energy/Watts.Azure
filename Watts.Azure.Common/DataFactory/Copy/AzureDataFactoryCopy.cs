@@ -215,8 +215,8 @@ namespace Watts.Azure.Common.DataFactory.Copy
                                 {
                                     Source = this.source,
                                     Sink = this.sink,
-                                    CloudDataMovementUnits = 8
-                                }
+                                    CloudDataMovementUnits = 8,
+                                },
                             }
                         },
                         }

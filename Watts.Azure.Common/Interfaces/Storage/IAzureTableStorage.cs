@@ -2,6 +2,7 @@ namespace Watts.Azure.Common.Interfaces.Storage
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using DataFactory;
     using Microsoft.WindowsAzure.Storage.Table;
 
@@ -19,6 +20,10 @@ namespace Watts.Azure.Common.Interfaces.Storage
         CloudTable CreateTableIfNotExists();
 
         CloudTable CreateTableFromTemplateEntity(DynamicTableEntity templateEntity);
+
+        bool Exists();
+
+        Task<bool> ExistsAsync();
 
         bool DeleteIfExists(bool waitUntilItsGone = false);
 

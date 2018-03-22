@@ -83,7 +83,8 @@ namespace Watts.Azure.Common.DataFactory.Copy
                 helper.CreateTargetIfItDoesntExist(this.sourceService, this.targetService);
             }
 
-            var dataStructure = this.sourceService.GetStructure();
+            // If the setup specifies a data structure, use that. Otherwise get the structure from the source.
+            var dataStructure = this.setup.DataStructure ?? this.sourceService.GetStructure();
 
             this.dataFactory.CreateDataFactory();
 

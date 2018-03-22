@@ -47,6 +47,19 @@ namespace Watts.Azure.Common.Storage.Objects
             return this.TableClient.GetTableReference(this.Name);
         }
 
+        public bool Exists()
+        {
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
+
+            return table.Exists();
+        }
+
+        public async Task<bool> ExistsAsync()
+        {
+            CloudTable table = this.TableClient.GetTableReference(this.Name);
+            return await table.ExistsAsync();
+        }
+
         /// <summary>
         /// Create a table if it doesn't exist.
         /// This throws a CouldNotCreateTableException if the operation is unsuccessful
@@ -222,7 +235,7 @@ namespace Watts.Azure.Common.Storage.Objects
         /// <summary>
         /// Selects a small number of entities and finds the union of the columns in those entities.
         /// The argument for selecting more than one is that the first entity may not contain all columns, whereas it's assumed to be less likely that
-        /// all 10 top entities do not. The number may have to be increased at some point, or made into a parameter.
+        /// all 1000 top entities do not. The number may have to be increased at some point, or made into a parameter.
         /// If partitionKeyType and/or rowKeyType is not manually supplied, the type "String" is assumed.
         /// </summary>
         /// <param name="partitionKeyType"></param>

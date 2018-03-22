@@ -22,7 +22,7 @@ namespace Watts.Azure.Common.Backup
         private readonly IAzureActiveDirectoryAuthentication backupEnvironmentAuthentication;
         private readonly BackupManagementTable backupManagementTable;
 
-        private Action<string> progressDelegate;
+        private readonly Action<string> progressDelegate;
 
         /// <summary>
         /// Create a new instance of TableStorageBackup.
@@ -47,6 +47,8 @@ namespace Watts.Azure.Common.Backup
         /// <returns></returns>
         public async Task<IEnumerable<BackupResult>> RunAsync()
         {
+            this.Report("Backup starting");
+
             var retVal = new List<BackupResult>();
 
             DateTime backupStartTime = DateTime.UtcNow;
@@ -70,6 +72,8 @@ namespace Watts.Azure.Common.Backup
         /// <returns>A list of names of the storage accounts that were deleted.</returns>
         public async Task<IEnumerable<string>> CleanUpOldBackupsAsync()
         {
+            this.Report($"Cleaning old backups...");
+
             List<string> retVal = new List<string>();
 
             // Get all storage accounts in the target resource group.
@@ -78,40 +82,52 @@ namespace Watts.Azure.Common.Backup
 
             DateTime now = DateTime.UtcNow;
 
+            this.Report($"Checking for expired backups...");
+
             // Check all accounts for tables that have expired. If the storage account no longer contains any tables, it is also deleted...
-            do
+            foreach (var account in accounts)
             {
-                foreach (var account in accounts)
+                this.Report($"Checking account {account.Name}");
+
+                List<string> tablesToDelete = new List<string>();
+
+                var createdDate = this.GetDateFromStorageAccountName(account.Name);
+
+                // Check each backup setup we have to see if there's anything that
+                // should be deleted in the resource group (expired backups).
+                foreach (var tableBackup in this.setup.TablesToBackup)
                 {
-                    List<string> tablesToDelete = new List<string>();
-
-                    var createdDate = this.GetDateFromStorageAccountName(account.Name);
-
-                    // Check each backup setup we have to see if there's anything that
-                    // should be deleted in the resource group (expired backups).
-                    foreach (var tableBackup in this.setup.TablesToBackup)
+                    // If the retentiontime has passed, add the table name for deletion from the backup
+                    // storage account
+                    if (now - createdDate > tableBackup.Schedule.RetentionTimeSpan)
                     {
-                        // If the retentiontime has passed, add the table name for deletion from the backup
-                        // storage account
-                        if (now - createdDate > tableBackup.Schedule.RetentionTimeSpan)
-                        {
-                            // We should delete the table
-                            tablesToDelete.Add(tableBackup.SourceStorage.Name);
-                        }
-                    }
+                        this.Report($"{tableBackup.SourceStorage.Name} has expired in storage account {account.Name}...");
 
-                    // Delete any tables that have expired.
-                    await this.DeleteTablesAsync(account, tablesToDelete);
-
-                    // Delete the storage account if there are no more tables in it.
-                    var deleted = await this.DeleteStorageAccountIfNoMoreTablesAsync(account);
-
-                    if (deleted)
-                    {
-                        retVal.Add(account.Name);
+                        // We should delete the table
+                        tablesToDelete.Add(tableBackup.SourceStorage.Name);
                     }
                 }
-            } while (await accounts.GetNextPageAsync() != null);
+
+                if (tablesToDelete.Any())
+                {
+                    // Delete any tables that have expired.
+                    await this.DeleteTablesAsync(account, tablesToDelete);
+                }
+                else
+                {
+                    this.Report("No tables to delete this.time...");
+                }
+
+                // Delete the storage account if there are no more tables in it.
+                var deleted = await this.DeleteStorageAccountIfNoMoreTablesAsync(account);
+
+                if (deleted)
+                {
+                    retVal.Add(account.Name);
+                }
+
+                this.Report($"{account.Name} cleaned...");
+            }
 
             return retVal;
         }
@@ -121,6 +137,7 @@ namespace Watts.Azure.Common.Backup
         /// </summary>
         internal void Initialize()
         {
+            this.Report("Initializing...");
             var backupEnvironmentCredentials = this.GetCredentials();
 
             this.targetStorageManager = StorageManager.Authenticate(backupEnvironmentCredentials, this.backupEnvironmentAuthentication.SubscriptionId);
@@ -133,6 +150,7 @@ namespace Watts.Azure.Common.Backup
 
             if (!tableClient.ListTables().Any())
             {
+                this.Report($"The storage account {account.Name} has no more tables. Will delete it now...");
                 await this.targetStorageManager.StorageAccounts.DeleteByIdAsync(account.Id);
                 return true;
             }
@@ -148,6 +166,8 @@ namespace Watts.Azure.Common.Backup
         /// <returns></returns>
         internal async Task DeleteTablesAsync(IStorageAccount account, List<string> tableNames)
         {
+            this.Report($"Deleting table(s) {string.Join(",", tableNames)} from storage account {account.Name}");
+
             string currentTableName = string.Empty;
             try
             {
@@ -159,12 +179,25 @@ namespace Watts.Azure.Common.Backup
                 foreach (var tableName in tableNames)
                 {
                     currentTableName = tableName;
-                    IAzureTableStorage tableStorage = new AzureTableStorage(tableName, connectionString);
-                    var success = tableStorage.DeleteIfExists();
 
-                    if (!success)
+                    IAzureTableStorage tableStorage = new AzureTableStorage(tableName, connectionString);
+
+                    // If the table does not exist, just skip.
+                    if (!await tableStorage.ExistsAsync())
                     {
-                        throw new TableDeleteFailedException(tableName);
+                        this.Report($"Table {tableName} does not exist in storage account {account.Name}");
+                    }
+                    else
+                    {
+                        var success = tableStorage.DeleteIfExists();
+
+                        if (!success)
+                        {
+                            this.Report($"There was a problem deleting the table {tableName}");
+                            throw new TableDeleteFailedException(tableName);
+                        }
+
+                        this.Report($"{tableName} deleted...");
                     }
                 }
             }
@@ -185,11 +218,13 @@ namespace Watts.Azure.Common.Backup
 
             if (!exists)
             {
+                this.Report($"Resource group {resourceGroupName} did not exist. Will create it...");
                 return await this.targetStorageManager.ResourceManager.ResourceGroups.Define(resourceGroupName)
                     .WithRegion(this.setup.BackupTargetRegion).CreateAsync();
             }
             else
             {
+                this.Report($"Resource group {resourceGroupName} already exists...");
                 return await this.targetStorageManager.ResourceManager.ResourceGroups.GetByNameAsync(resourceGroupName);
             }
         }
@@ -202,6 +237,8 @@ namespace Watts.Azure.Common.Backup
         /// <returns></returns>
         internal async Task<BackupResult> BackupTableAsync(TableBackupSetup tableBackupSetup, DateTime backupStartTime)
         {
+            this.Report($"Backing up table {tableBackupSetup.SourceStorage.Name}");
+
             // Check when the table was last backed up.
             var lastBackupEntity = this.GetLastBackupEntity(tableBackupSetup);
 
@@ -216,23 +253,26 @@ namespace Watts.Azure.Common.Backup
             // If we've never backed this table up before, perform a full table backup.
             if (lastBackupEntity == null)
             {
+                this.Report($"First backup of table {tableBackupSetup.SourceStorage.Name}");
+
                 // We've never backed this table up before.
                 targetAccount = await this.GetNewAccount(backupStartTime);
                 returnCode = BackupReturnCode.BackupToNewContainerDone;
             }
             else
             {
-                // If the last backup started more than the configured frequency ago, we should run the backup now.
-                var mustRunBackupNow = startTime - lastBackupEntity.BackupStartedAt >
-                                       tableBackupSetup.Schedule.IncrementalLoadFrequency;
+                bool mustRunBackupNow = this.ShouldRunBackupNow(startTime, lastBackupEntity, tableBackupSetup);
 
                 // If we don't need to run the backup now, just return a result indicating a no-operation.
                 if (!mustRunBackupNow)
                 {
+                    this.Report($"No need to back up yet, as the time since the last backup ({startTime - lastBackupEntity.BackupStartedAt}) is less than both the incremental load frequency ({tableBackupSetup.Schedule.IncrementalLoadFrequency}) and switch target frequency ({tableBackupSetup.Schedule.SwitchTargetStorageFrequency})");
+
                     return new BackupResult()
                     {
                         Setup = tableBackupSetup,
                         ReturnCode = BackupReturnCode.Nop,
+                        BackUpTableName = tableBackupSetup.SourceStorage.Name
                     };
                 }
 
@@ -246,10 +286,14 @@ namespace Watts.Azure.Common.Backup
                 if (mustChangeTarget)
                 {
                     targetAccount = await this.GetNewAccount(DateTime.UtcNow);
+
+                    this.Report($"Time to switch to a new storage account. Created {targetAccount}");
                     returnCode = BackupReturnCode.BackupToNewContainerDone;
                 }
                 else
                 {
+                    this.Report($"Will target existing storage account {lastBackupEntity.TargetStorageAccountName}");
+
                     // Get the account that this table was backed up to last.
                     targetAccount = await this.GetStorageAccount(lastBackupEntity.TargetStorageAccountName);
 
@@ -257,6 +301,7 @@ namespace Watts.Azure.Common.Backup
                     if (tableBackupSetup.BackupMode == BackupMode.Incremental)
                     {
                         sourceQuery = $"Timestamp gt datetime'{lastBackupEntity.BackupStartedAt.ToIso8601()}'";
+                        this.Report($"Incremental backup. Source query will be {sourceQuery}");
                     }
 
                     returnCode = BackupReturnCode.BackupToExistingContainerDone;
@@ -289,8 +334,22 @@ namespace Watts.Azure.Common.Backup
             };
         }
 
+        internal bool ShouldRunBackupNow(DateTime startTime, BackupManagementEntity lastBackupEntity, TableBackupSetup tableBackupSetup)
+        {
+            // If the time since the last backup exceeds either the incremental load frequency or the switch target frequency, we must run a backup.
+            var incrementalLoadFrequencyExceeded = startTime - lastBackupEntity.BackupStartedAt >
+                                                   tableBackupSetup.Schedule.IncrementalLoadFrequency;
+            var switchTargetFrequencyExceeded = startTime - lastBackupEntity.BackupStartedAt >
+                                                tableBackupSetup.Schedule.SwitchTargetStorageFrequency;
+            var mustRunBackupNow = incrementalLoadFrequencyExceeded || switchTargetFrequencyExceeded;
+
+            return mustRunBackupNow;
+        }
+
         internal void RunPipeline(TableBackupSetup backupSetup, string sourceQuery, IAzureTableStorage targetTableStorage, DateTimeOffset startTime)
         {
+            this.Report($"Running pipeline to back up {backupSetup.SourceStorage.Name}...");
+
             CopySetup copySetup = new CopySetup
             {
                 DeleteDataFactoryIfExists = true,
@@ -304,11 +363,12 @@ namespace Watts.Azure.Common.Backup
             };
 
             CopyDataPipeline copyPipeline =
-                CopyDataPipeline.UsingDataFactorySettings(this.setup.DataFactorySetup, copySetup, this.backupEnvironmentAuthentication, Console.WriteLine);
-
+                CopyDataPipeline.UsingDataFactorySettings(this.setup.DataFactorySetup, copySetup, this.backupEnvironmentAuthentication, progress => this.Report($"Pipeline: {progress}"));
             copyPipeline.From(backupSetup.SourceStorage).To(targetTableStorage).UsingSourceQuery(sourceQuery).Start();
 
             copyPipeline.Start();
+
+            this.Report($"Cleaning up pipeline");
             copyPipeline.CleanUp();
         }
 
@@ -324,6 +384,7 @@ namespace Watts.Azure.Common.Backup
         {
             string targetAccountName = $"{date:yyyyMMddHHmmss}{this.setup.BackupStorageAccountSuffix}";
 
+            this.Report($"Getting or creating storage account {targetAccountName}");
             return await this.CreateStorageAccountIfNotExists(targetAccountName);
         }
 
@@ -350,7 +411,7 @@ namespace Watts.Azure.Common.Backup
             // Take the first 14 characters, i.e. the part related to date (yyyyMMddHHmmss)
             string name = storageAccountName.Substring(0, 14);
 
-            
+
             int startIndexOfYear = 0;
             int startIndexOfMonth = 4;
             int startIndexOfDay = 6;
@@ -358,35 +419,22 @@ namespace Watts.Azure.Common.Backup
             int startIndexOfMinute = 10;
             int startIndexOfSecond = 12;
 
-            if (!int.TryParse(name.Substring(startIndexOfYear, 4), out var year))
+            int TryParse(string input)
             {
-                throw unexpectedNameException;
+                if (!int.TryParse(input, out var outValue))
+                {
+                    throw unexpectedNameException;
+                }
+
+                return outValue;
             }
 
-            if (!int.TryParse(name.Substring(startIndexOfMonth, 2), out var month))
-            {
-                throw unexpectedNameException;
-            }
-
-            if (!int.TryParse(name.Substring(startIndexOfDay, 2), out var day))
-            {
-                throw unexpectedNameException;
-            }
-
-            if (!int.TryParse(name.Substring(startIndexOfHour, 2), out var hour))
-            {
-                throw unexpectedNameException;
-            }
-
-            if (!int.TryParse(name.Substring(startIndexOfMinute, 2), out var minute))
-            {
-                throw unexpectedNameException;
-            }
-
-            if (!int.TryParse(name.Substring(startIndexOfSecond, 2), out var second))
-            {
-                throw unexpectedNameException;
-            }
+            var year = TryParse(name.Substring(startIndexOfYear, 4));
+            var month = TryParse(name.Substring(startIndexOfMonth, 2));
+            var day = TryParse(name.Substring(startIndexOfDay, 2));
+            var hour = TryParse(name.Substring(startIndexOfHour, 2));
+            var minute = TryParse(name.Substring(startIndexOfMinute, 2));
+            var second = TryParse(name.Substring(startIndexOfSecond, 2));
 
             return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Utc);
         }
@@ -424,6 +472,11 @@ namespace Watts.Azure.Common.Backup
                 },
                 this.backupEnvironmentAuthentication.Credentials.TenantId,
                 this.setup.AzureEnvironment);
+        }
+
+        internal void Report(string progress)
+        {
+            this.progressDelegate?.Invoke($"{DateTime.Now}: {progress}");
         }
     }
 }

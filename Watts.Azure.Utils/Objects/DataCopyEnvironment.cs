@@ -14,6 +14,7 @@ namespace Watts.Azure.Utils.Objects
         public DataCopyEnvironment(string subscriptionId, AppActiveDirectoryAuthenticationCredentials credentials, StorageAccountSettings storageAccountSettings, AzureDataFactorySetup dataFactorySetup)
         {
             this.SubscriptionId = subscriptionId;
+            this.Credentials = credentials;
             this.StorageAccountSettings = storageAccountSettings;
             this.DataFactorySetup = dataFactorySetup;
         }

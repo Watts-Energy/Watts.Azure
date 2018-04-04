@@ -73,6 +73,7 @@ namespace Watts.Azure.Common
     {
         Success,
         Failure,
+        InProgress,
         Unknown
     }
 

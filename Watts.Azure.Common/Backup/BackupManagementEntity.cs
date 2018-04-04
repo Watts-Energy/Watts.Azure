@@ -9,7 +9,7 @@ namespace Watts.Azure.Common.Backup
         {
         }
 
-        public BackupManagementEntity(string id, string sourceTableName, string targetStorageAccountName, string targetTableName, DateTimeOffset dateCreated, DateTimeOffset backupStartedAt, DateTimeOffset backupFinishedAt, BackupStatus status, BackupMode backupMode)
+        public BackupManagementEntity(string id, string sourceTableName, string targetStorageAccountName, string targetTableName, DateTimeOffset dateCreated, DateTimeOffset backupStartedAt, DateTimeOffset? backupFinishedAt, BackupStatus status, BackupMode backupMode)
         {
             this.Id = id;
             this.SourceTableName = sourceTableName;
@@ -37,7 +37,7 @@ namespace Watts.Azure.Common.Backup
 
         public DateTimeOffset BackupStartedAt { get; set; }
 
-        public DateTimeOffset BackupFinishedAt { get; set; }
+        public DateTimeOffset? BackupFinishedAt { get; set; }
 
         public int Status { get; set; }
 

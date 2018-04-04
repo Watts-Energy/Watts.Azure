@@ -45,7 +45,7 @@ namespace Watts.Azure.Common.Backup
         /// Run the backup.
         /// </summary>
         /// <returns></returns>
-        public async Task<IEnumerable<BackupResult>> RunAsync()
+        public async Task<IEnumerable<BackupResult>> RunAsync(bool parallelize = false)
         {
             this.Report("Backup starting");
 
@@ -57,9 +57,20 @@ namespace Watts.Azure.Common.Backup
             await this.CreateBackupResourceGroupIfDoesntExist(this.setup.BackupTargetResourceGroupName);
 
             // Go through each table and perform the backup.
-            foreach (var tableToBackup in this.setup.TablesToBackup)
+            if (parallelize)
             {
-                retVal.Add(await this.BackupTableAsync(tableToBackup, backupStartTime));
+                Parallel.ForEach(this.setup.TablesToBackup, async tableBackupSetup =>
+                {
+                    retVal.Add(await this.BackupTableAsync(tableBackupSetup, backupStartTime));
+                });
+            }
+            else
+            {
+                foreach (var backup in this.setup.TablesToBackup)
+                {
+                    var backupResult = await this.BackupTableAsync(backup, backupStartTime);
+                    retVal.Add(backupResult);
+                }
             }
 
             return retVal;
@@ -261,6 +272,19 @@ namespace Watts.Azure.Common.Backup
             }
             else
             {
+                // If there is a backup in progress, just return
+                if (lastBackupEntity.Status == (int)BackupStatus.InProgress)
+                {
+                    this.Report($"A backup of {tableBackupSetup.SourceStorage.Name} is already in progress...");
+
+                    return new BackupResult()
+                    {
+                        Setup = tableBackupSetup,
+                        ReturnCode = BackupReturnCode.Nop,
+                        BackUpTableName = tableBackupSetup.SourceStorage.Name,
+                    };
+                }
+
                 bool mustRunBackupNow = this.ShouldRunBackupNow(startTime, lastBackupEntity, tableBackupSetup);
 
                 // If we don't need to run the backup now, just return a result indicating a no-operation.
@@ -315,14 +339,16 @@ namespace Watts.Azure.Common.Backup
 
             IAzureTableStorage targetTableStorage = new AzureTableStorage(tableBackupSetup.SourceStorage.Name, this.GetStorageConnectionString(accountName, key));
 
+            // Insert an entity indicating that a backup is in progress...
+            BackupManagementEntity managementEntity = new BackupManagementEntity(Guid.NewGuid().ToString(), tableBackupSetup.SourceStorage.Name, targetAccount.Name, tableBackupSetup.SourceStorage.Name, DateTime.UtcNow, startTime, null, BackupStatus.InProgress, tableBackupSetup.BackupMode);
+            this.backupManagementTable.Insert(managementEntity);
+
             this.RunPipeline(tableBackupSetup, sourceQuery, targetTableStorage, startTime);
 
-            DateTime end = DateTime.UtcNow;
-
-            // Save an entity in the management table to remember the last time we ran.
-            BackupManagementEntity historyEntity = new BackupManagementEntity(Guid.NewGuid().ToString(), tableBackupSetup.SourceStorage.Name, targetAccount.Name, targetTableStorage.Name, DateTime.UtcNow, startTime, end, BackupStatus.Success, tableBackupSetup.BackupMode);
-
-            this.backupManagementTable.Insert(historyEntity);
+            // Update the management entity to indicate that the backup has now finished
+            managementEntity.BackupFinishedAt = DateTimeOffset.UtcNow;
+            managementEntity.Status = (int)BackupStatus.Success;
+            this.backupManagementTable.Update(managementEntity);
 
             return new BackupResult()
             {

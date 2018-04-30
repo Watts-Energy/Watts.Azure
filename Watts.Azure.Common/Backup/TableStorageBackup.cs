@@ -343,12 +343,22 @@ namespace Watts.Azure.Common.Backup
             BackupManagementEntity managementEntity = new BackupManagementEntity(Guid.NewGuid().ToString(), tableBackupSetup.SourceStorage.Name, targetAccount.Name, tableBackupSetup.SourceStorage.Name, DateTime.UtcNow, startTime, null, BackupStatus.InProgress, tableBackupSetup.BackupMode);
             this.backupManagementTable.Insert(managementEntity);
 
-            this.RunPipeline(tableBackupSetup, sourceQuery, targetTableStorage, startTime);
-
-            // Update the management entity to indicate that the backup has now finished
-            managementEntity.BackupFinishedAt = DateTimeOffset.UtcNow;
-            managementEntity.Status = (int)BackupStatus.Success;
-            this.backupManagementTable.Update(managementEntity);
+            var status = BackupStatus.Success;
+            try
+            {
+                this.RunPipeline(tableBackupSetup, sourceQuery, targetTableStorage, startTime);
+            }
+            catch (Exception ex)
+            {
+                status = BackupStatus.Failure;
+            }
+            finally
+            {
+                // Update the management entity to indicate that the backup has now finished
+                managementEntity.BackupFinishedAt = DateTimeOffset.UtcNow;
+                managementEntity.Status = (int)status;
+                this.backupManagementTable.Update(managementEntity);
+            }
 
             return new BackupResult()
             {

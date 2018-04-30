@@ -8,7 +8,7 @@ namespace Watts.Azure.Common.DataFactory.General
 
     public class LinkedServiceHelper
     {
-        private Action<string> progressDelegate;
+        private readonly Action<string> progressDelegate;
 
         public LinkedServiceHelper(Action<string> progressDelegate)
         {

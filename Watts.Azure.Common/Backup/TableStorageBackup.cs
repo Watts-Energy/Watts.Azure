@@ -350,6 +350,7 @@ namespace Watts.Azure.Common.Backup
             }
             catch (Exception ex)
             {
+                this.Report($"An exception occured: {ex}");
                 status = BackupStatus.Failure;
             }
             finally

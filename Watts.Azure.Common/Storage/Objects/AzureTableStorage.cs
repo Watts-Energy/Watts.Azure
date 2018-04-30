@@ -267,7 +267,22 @@ namespace Watts.Azure.Common.Storage.Objects
 
             retVal.ReplaceNullTypesWithString();
 
+            // Due to unexpected behavior of Azure Data Factory, we currently need to replace DateTime times with DateTimeOffset, else 
+            // casting fails under certain circumstances...
+            this.ReplaceDateTimeWithDateTimeOffset(retVal);
+
             return retVal;
+        }
+
+        private void ReplaceDateTimeWithDateTimeOffset(DataStructure retVal)
+        {
+            foreach (var entity in retVal.DataElements)
+            {
+                if (entity.Type == "DateTime")
+                {
+                    entity.Type = "DateTimeOffset";
+                }
+            }
         }
 
         /// <summary>
